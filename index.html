@@ -16,7 +16,10 @@
   <style>
     /* 全局設定 */
     html, body {
-        height: 100%; width: 100%; overflow: hidden; 
+        /* 使用 dvh (Dynamic Viewport Height) 解決 Safari 網址列伸縮造成的空白問題 */
+        height: 100dvh; 
+        width: 100%; 
+        overflow: hidden; 
         font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; 
         background-color: #f0f9ff;
         color: #1e3a8a; user-select: none; -webkit-tap-highlight-color: transparent;
@@ -34,9 +37,10 @@
     .scrollable-content {
         flex: 1; overflow-y: auto; overflow-x: hidden;
         -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
-        touch-action: pan-y; position: relative; padding-top: 5px; 
-        /* 修正：底部只留 Home Bar 的絕對安全距離，不多加任何像素 */
-        padding-bottom: env(safe-area-inset-bottom);
+        touch-action: pan-y; position: relative; 
+        padding-top: 10px; 
+        /* 底部修正：只留 20px + Home Bar 安全距離，解決底部大塊空白 */
+        padding-bottom: calc(20px + env(safe-area-inset-bottom));
     }
 
     /* 玻璃擬態卡片 */
@@ -79,7 +83,7 @@
     .title-link { text-decoration: none; color: #0f172a; font-weight: 800; border-bottom: 1px dashed #94a3b8; }
     .map-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-decoration: none; flex-shrink: 0; }
     
-    /* 下拉更新：padding-top 設為安全距離，讓文字剛好出現在瀏海下方 */
+    /* 下拉更新 */
     .pull-indicator { 
         height: 0; 
         display: flex; 
@@ -91,7 +95,7 @@
         font-weight: bold; 
         font-size: 0.875rem; 
         transition: height 0.1s; 
-        padding-top: env(safe-area-inset-top); /* 避開瀏海 */
+        padding-top: env(safe-area-inset-top); 
         box-sizing: content-box; 
     }
 
@@ -114,7 +118,7 @@
       <span v-if="pullDistance > 20">{{ refreshText }}</span>
   </div>
 
-  <div class="px-6 pb-2 rounded-b-[2.5rem] shadow-lg swipe-protected relative z-20" style="background: rgba(255,255,255,0.4); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.6); padding-top: max(10px, env(safe-area-inset-top));">
+  <div class="px-6 pb-2 rounded-b-[2.5rem] shadow-lg swipe-protected relative z-20" style="background: rgba(255,255,255,0.4); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.6); padding-top: calc(env(safe-area-inset-top) + 2px);">
     <div class="flex justify-between items-center">
         <h1 class="text-xl font-extrabold tracking-tight text-slate-800 drop-shadow-sm">2026 挪威冰島之旅</h1>
         <div class="text-right">
@@ -277,9 +281,7 @@
 
 <script>
 // ====================================================================================
-// 🔴 嚴重警告：請務必將下方的網址換成你自己 Apps Script 部署後的網址！
-// 網址結尾應該是 /exec，而不是 /edit
-// 範例：https://script.google.com/macros/s/你的亂碼ID/exec
+// 🔴 務必確認這裡是你自己的 GAS 網址（結尾是 /exec）
 // ====================================================================================
 const YOUR_GAS_URL = 'https://script.google.com/macros/s/AKfycbz6PZtqLJzlS2a71R-RfZjpJCuqJVPoP7RuNxEe74mS_uvxBejMNGKboFSn2ArNnXAu/exec'; 
 
@@ -294,18 +296,18 @@ async function callApi(action, data = null, method = 'GET') {
 
     try {
         const response = await fetch(url, options);
-        // 檢查是否誤傳回 HTML (常見於權限錯誤或網址錯誤)
+        // 檢查 Content-Type 確保不是回傳 Google 登入頁面 (HTML)
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.indexOf("application/json") === -1) {
-             throw new Error("Server returned HTML instead of JSON. Check URL & Permissions!");
+             throw new Error("Server returned HTML. Check URL & Permissions!");
         }
         if (!response.ok) throw new Error('Network response was not ok');
         return await response.json();
     } catch (error) { 
         console.error('API Error:', error); 
         if(navigator.onLine) {
-           if(error.message.includes("HTML") || error.message.includes("URL")) {
-             alert("⚠️ 連線失敗！\n\n原因：你可能忘記修改 index.html 第 385 行的網址，或者 Apps Script 權限沒設為「任何人」。");
+           if(error.message.includes("HTML")) {
+             alert("⚠️ 連線失敗！伺服器回傳了 HTML 而非資料。\n請確認 GAS 部署權限設為「任何人 (Anyone)」。");
            } else {
              console.log("Connect failed, using local data");
            }
