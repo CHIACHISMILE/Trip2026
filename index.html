@@ -34,9 +34,9 @@
     .scrollable-content {
         flex: 1; overflow-y: auto; overflow-x: hidden;
         -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
-        touch-action: pan-y; position: relative; padding-top: 10px; 
-        /* 修正底部留白：只保留 Home Bar 安全距離 + 少量緩衝 */
-        padding-bottom: calc(env(safe-area-inset-bottom) + 20px);
+        touch-action: pan-y; position: relative; padding-top: 5px; 
+        /* 修正：底部只留 Home Bar 的絕對安全距離，不多加任何像素 */
+        padding-bottom: env(safe-area-inset-bottom);
     }
 
     /* 玻璃擬態卡片 */
@@ -79,19 +79,19 @@
     .title-link { text-decoration: none; color: #0f172a; font-weight: 800; border-bottom: 1px dashed #94a3b8; }
     .map-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-decoration: none; flex-shrink: 0; }
     
-    /* 下拉更新 */
+    /* 下拉更新：padding-top 設為安全距離，讓文字剛好出現在瀏海下方 */
     .pull-indicator { 
         height: 0; 
         display: flex; 
         justify-content: center; 
         align-items: flex-end; 
-        padding-bottom: 10px; 
+        padding-bottom: 5px; 
         overflow: hidden; 
         color: #64748b; 
         font-weight: bold; 
         font-size: 0.875rem; 
         transition: height 0.1s; 
-        padding-top: env(safe-area-inset-top);
+        padding-top: env(safe-area-inset-top); /* 避開瀏海 */
         box-sizing: content-box; 
     }
 
@@ -114,7 +114,7 @@
       <span v-if="pullDistance > 20">{{ refreshText }}</span>
   </div>
 
-  <div class="px-6 pb-4 rounded-b-[2.5rem] shadow-lg swipe-protected relative z-20" style="background: rgba(255,255,255,0.4); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.6); padding-top: calc(env(safe-area-inset-top) + 5px);">
+  <div class="px-6 pb-2 rounded-b-[2.5rem] shadow-lg swipe-protected relative z-20" style="background: rgba(255,255,255,0.4); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.6); padding-top: max(10px, env(safe-area-inset-top));">
     <div class="flex justify-between items-center">
         <h1 class="text-xl font-extrabold tracking-tight text-slate-800 drop-shadow-sm">2026 挪威冰島之旅</h1>
         <div class="text-right">
@@ -276,7 +276,11 @@
 </div>
 
 <script>
-// --- 重要：請將此處替換為你的 GAS 網址 ---
+// ====================================================================================
+// 🔴 嚴重警告：請務必將下方的網址換成你自己 Apps Script 部署後的網址！
+// 網址結尾應該是 /exec，而不是 /edit
+// 範例：https://script.google.com/macros/s/你的亂碼ID/exec
+// ====================================================================================
 const YOUR_GAS_URL = 'https://script.google.com/macros/s/AKfycbz6PZtqLJzlS2a71R-RfZjpJCuqJVPoP7RuNxEe74mS_uvxBejMNGKboFSn2ArNnXAu/exec'; 
 
 async function callApi(action, data = null, method = 'GET') {
@@ -290,14 +294,21 @@ async function callApi(action, data = null, method = 'GET') {
 
     try {
         const response = await fetch(url, options);
+        // 檢查是否誤傳回 HTML (常見於權限錯誤或網址錯誤)
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") === -1) {
+             throw new Error("Server returned HTML instead of JSON. Check URL & Permissions!");
+        }
         if (!response.ok) throw new Error('Network response was not ok');
         return await response.json();
     } catch (error) { 
         console.error('API Error:', error); 
-        // 增加錯誤提示：如果是離線狀態，不報錯；如果是連線中但失敗，報錯
         if(navigator.onLine) {
-           // 不使用 alert 干擾，改為 console log 
-           console.log("Connect failed, using local data if available");
+           if(error.message.includes("HTML") || error.message.includes("URL")) {
+             alert("⚠️ 連線失敗！\n\n原因：你可能忘記修改 index.html 第 385 行的網址，或者 Apps Script 權限沒設為「任何人」。");
+           } else {
+             console.log("Connect failed, using local data");
+           }
         }
         throw error; 
     }
@@ -488,11 +499,7 @@ createApp({
             if(tab.value === 'analysis') nextTick(() => renderChart());
          }
       } catch(e) { 
-          console.log('Fetch error, using local'); 
-          // 如果第一次載入且本地沒資料，跳提示
-          if(!expenses.value.length && isFirstLoad.value && isOnline.value) {
-              alert("連線到 Google Sheet 失敗，請確認你的網路，或 App Script 網址是否正確。");
-          }
+          // 錯誤已在 callApi 處理
       }
       finally {
          isLoading.value = false;
