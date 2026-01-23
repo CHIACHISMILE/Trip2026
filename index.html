@@ -48,7 +48,15 @@
         border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
     }
     .btn-glacier:active { box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
-    .tab-bar { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.5); }
+    .tab-bar {
+        background: rgba(255, 255, 255, 0.85); 
+        backdrop-filter: blur(20px); 
+        -webkit-backdrop-filter: blur(20px);
+        /* 加上上方邊框，視覺比較清楚 */
+        border-top: 1px solid rgba(255, 255, 255, 0.5);
+        /* 關鍵：底部增加 iPhone Home Bar 的安全高度，並額外加 10px 讓按鈕不要太貼底 */
+        padding-bottom: calc(env(safe-area-inset-bottom) + 10px); 
+    }
     .tab-btn { color: #94a3b8; }
     .tab-active { color: #0284c7; position: relative; }
     .tab-active::after {
