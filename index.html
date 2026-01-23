@@ -14,32 +14,30 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    /* 全局設定：冰河琉璃 */
+    /* 全局設定 */
     html, body {
-        height: 100%; 
-        width: 100%;
-        overflow: hidden; 
+        height: 100%; width: 100%; overflow: hidden; 
         font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; 
-        /* 修正重點：加上 fixed 讓背景不隨滾動跑掉，填滿整個螢幕 */
-        background: linear-gradient(160deg, #dbeafe 0%, #eff6ff 40%, #f0f9ff 100%) fixed;
-        background-attachment: fixed;
-        color: #1e3a8a; 
-        user-select: none; 
-        -webkit-tap-highlight-color: transparent;
+        /* 設置底色避免回彈時出現白邊 */
+        background-color: #f0f9ff;
+        color: #1e3a8a; user-select: none; -webkit-tap-highlight-color: transparent;
     }
-    #app { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* 修正 1：獨立的固定背景層，徹底解決底部白邊與回彈穿幫問題 */
+    #fixed-bg {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(160deg, #dbeafe 0%, #eff6ff 40%, #f0f9ff 100%);
+        z-index: -1; pointer-events: none;
+    }
+
+    #app { height: 100%; display: flex; flex-direction: column; overflow: hidden; position: relative; }
     
     .scrollable-content {
-        flex: 1; 
-        overflow-y: auto; 
-        overflow-x: hidden;
-        -webkit-overflow-scrolling: touch; 
-        overscroll-behavior-y: contain;
-        touch-action: pan-y; 
-        position: relative; 
-        padding-top: 10px; 
-        /* 修正重點：底部留出安全距離 + 額外空間，確保最後一個項目不被 Home Bar 擋住 */
-        padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
+        flex: 1; overflow-y: auto; overflow-x: hidden;
+        -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
+        touch-action: pan-y; position: relative; padding-top: 10px; 
+        /* 修正 2：加深底部安全距離，確保內容不被 Home Bar 遮擋 */
+        padding-bottom: calc(env(safe-area-inset-bottom) + 100px);
     }
 
     .glass-card {
@@ -81,6 +79,8 @@
   </style>
 </head>
 <body>
+<div id="fixed-bg"></div>
+
 <div id="app">
   <div v-if="isLoading && !isPullRefreshing" class="loading">
       <div class="glass-card px-6 py-4 flex flex-col items-center">
@@ -254,7 +254,7 @@
 </div>
 
 <script>
-// --- 重要：請將此處替換為你的 GAS 網址 (記得結尾是 /exec) ---
+// --- 重要：請將此處替換為你的 GAS 網址 ---
 const YOUR_GAS_URL = 'https://script.google.com/macros/s/AKfycbz1gM0J6wO7oWv9l0H5fQ4e2s3t_8r9p0o1n2m3l4k5j6i7h8g9f0e1d2c3b4a5/exec'; 
 
 async function callApi(action, data = null, method = 'GET') {
@@ -268,8 +268,17 @@ async function callApi(action, data = null, method = 'GET') {
 
     try {
         const response = await fetch(url, options);
+        if (!response.ok) throw new Error('Network response was not ok');
         return await response.json();
-    } catch (error) { console.error('API Error:', error); throw error; }
+    } catch (error) { 
+        console.error('API Error:', error); 
+        // 增加錯誤提示：如果是離線狀態，不報錯；如果是連線中但失敗，報錯
+        if(navigator.onLine) {
+           // 不使用 alert 干擾，改為 console log 
+           console.log("Connect failed, using local data if available");
+        }
+        throw error; 
+    }
 }
 
 if ('serviceWorker' in navigator) {
@@ -456,7 +465,13 @@ createApp({
             saveLocal(res);
             if(tab.value === 'analysis') nextTick(() => renderChart());
          }
-      } catch(e) { console.log('Fetch error, using local'); }
+      } catch(e) { 
+          console.log('Fetch error, using local'); 
+          // 如果第一次載入且本地沒資料，跳提示
+          if(!expenses.value.length && isFirstLoad.value && isOnline.value) {
+              alert("連線到 Google Sheet 失敗，請確認你的網路，或 App Script 網址是否正確。");
+          }
+      }
       finally {
          isLoading.value = false;
          isPullRefreshing.value = false;
