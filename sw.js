@@ -1,5 +1,5 @@
 // 版本號：如果修改了 index.html，請修改這裡的數字 (例如 v1 -> v2) 以強制更新快取
-const CACHE_NAME = 'trip-app-v1.3';
+const CACHE_NAME = 'trip-app-v1.4';
 const ASSETS = [
   './',
   './index.html',
