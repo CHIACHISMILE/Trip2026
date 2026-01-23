@@ -215,12 +215,18 @@
         
         <div class="bg-gradient-to-br from-[#3b82f6] to-[#6366f1] text-white rounded-3xl p-6 shadow-xl mb-6 relative overflow-hidden ring-1 ring-white/20">
            <div class="absolute -top-10 -right-10 w-48 h-48 bg-white opacity-10 rounded-full blur-3xl"></div>
+           
            <div class="border-b border-white/10 pb-3 mb-3 flex justify-between items-center relative z-10"><div class="text-xs font-medium opacity-80 tracking-widest uppercase">家齊+亭穎 預算</div><div class="font-bold text-lg font-mono tracking-wider opacity-90">500,000</div></div>
            <div class="flex justify-between items-end relative z-10">
                <div><div class="text-4xl font-black tracking-tighter drop-shadow-sm">{{ formatNumber(Math.round(500000 - publicSpent)) }}</div><div class="text-xs font-bold opacity-70 mt-1">剩餘經費 (NTD)</div></div>
                <div class="text-right"><div class="text-lg font-bold">{{ formatNumber(Math.round(publicSpent)) }}</div><div class="text-xs opacity-70 font-medium">已支出 ({{ Math.round(publicSpent/500000*100) }}%)</div></div>
            </div>
            <div class="w-full bg-black/20 h-2 rounded-full mt-5 overflow-hidden relative z-10"><div class="bg-white h-full shadow-[0_0_10px_rgba(255,255,255,0.5)] transition-all duration-1000" :style="{width: Math.min((publicSpent/500000)*100, 100) + '%'}"></div></div>
+           
+           <div class="mt-4 pt-3 border-t border-white/20 flex justify-between items-center text-yellow-100 relative z-10">
+               <span class="text-xs font-bold">媽媽個人與分攤支出</span>
+               <span class="font-bold font-mono text-lg">+ {{ formatNumber(Math.round(momSpent)) }}</span>
+           </div>
         </div>
 
         <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-slate-700 text-lg">消費明細</h3><select v-model="filterDate" class="glass-input px-3 py-1.5 rounded-lg text-xs text-slate-600 outline-none font-bold"><option value="ALL">全部日期</option><option v-for="d in uniqueExpDates" :value="d">{{ d }}</option></select></div>
@@ -664,6 +670,14 @@ createApp({
         }, 0);
     });
 
+    const momSpent = computed(() => {
+        return expenses.value.reduce((sum, e) => {
+            const amt = getAmountTWD(e);
+            if (e.involved.length > 0 && e.involved.includes('媽媽')) return sum + (amt / e.involved.length);
+            return sum;
+        }, 0);
+    });
+
     const getCategoryClass = (cat) => {
         switch(cat) { case '交通': return 'cat-traffic'; case '住宿': return 'cat-stay'; case '景點': return 'cat-spot'; case '飲食': return 'cat-food'; default: return 'cat-note'; }
     };
@@ -718,7 +732,7 @@ createApp({
     });
 
     return { tab, isLoading, members, expenses, itinerary, tripDates, selDate, filterDate, rates, newExp, showItinModal, showExpModal, showRateModal, isEditing, itinForm, editExpForm, tempRates, filteredExpenses, uniqueExpDates, getAmountTWD, changeTabToAnalysis, renderChart, getCategoryClass, getDayInfo, getEvents, formatNumber, toggleSelectAll, submitExp, openAddItin, openEditItin, deleteItin, submitItin, deleteExp, openEditExp, submitEditExp, debts, selectDate, dateContainer, scrollContainer,
-    handleTouchStart, handleTouchMove, handleTouchEnd, pullDistance, isPullRefreshing, refreshText, tripStatus, publicSpent, openRateModal, saveAndRecalculateRates, todayDate, todayWeekday, isOnline, syncQueue, processSyncQueue, forceClearSync };
+    handleTouchStart, handleTouchMove, handleTouchEnd, pullDistance, isPullRefreshing, refreshText, tripStatus, publicSpent, momSpent, openRateModal, saveAndRecalculateRates, todayDate, todayWeekday, isOnline, syncQueue, processSyncQueue, forceClearSync };
   }
 }).mount('#app');
 </script>
