@@ -16,13 +16,16 @@
   <style>
     /* 全局設定 */
     html, body {
-        /* 使用 dvh (Dynamic Viewport Height) 解決 Safari 網址列伸縮造成的空白問題 */
         height: 100dvh; 
         width: 100%; 
         overflow: hidden; 
         font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; 
         background-color: #f0f9ff;
-        color: #1e3a8a; user-select: none; -webkit-tap-highlight-color: transparent;
+        color: #1e3a8a; 
+        user-select: none; 
+        -webkit-tap-highlight-color: transparent;
+        /* 關鍵修正：防止 iOS 整頁回彈，讓體驗更像 App */
+        overscroll-behavior: none;
     }
 
     /* 獨立固定背景層 */
@@ -35,12 +38,16 @@
     #app { height: 100%; display: flex; flex-direction: column; overflow: hidden; position: relative; }
     
     .scrollable-content {
-        flex: 1; overflow-y: auto; overflow-x: hidden;
-        -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
-        touch-action: pan-y; position: relative; 
+        flex: 1; 
+        overflow-y: auto; 
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch; 
+        overscroll-behavior-y: contain;
+        touch-action: pan-y; 
+        position: relative; 
         padding-top: 10px; 
-        /* 底部修正：只留 20px + Home Bar 安全距離，解決底部大塊空白 */
-        padding-bottom: calc(20px + env(safe-area-inset-bottom));
+        /* 關鍵修正：底部留白，確保最後一個項目能滑出來，但不會有視覺上的遮擋塊 */
+        padding-bottom: calc(80px + env(safe-area-inset-bottom));
     }
 
     /* 玻璃擬態卡片 */
@@ -50,6 +57,8 @@
         box-shadow: 0 4px 15px rgba(148, 163, 184, 0.1); transition: transform 0.2s;
     }
     .glass-card:active { transform: scale(0.99); }
+    
+    /* 玻璃輸入框 */
     .glass-input {
         background: rgba(255, 255, 255, 0.5); border: 1px solid rgba(255, 255, 255, 0.6);
         box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); color: #0f172a; transition: all 0.3s;
@@ -69,8 +78,13 @@
     }
     .btn-glacier:active { box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
     
-    .tab-bar { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.5); }
-    .tab-btn { color: #94a3b8; }
+    .tab-bar { 
+        background: rgba(255, 255, 255, 0.85); 
+        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.5); 
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    .tab-btn { color: #94a3b8; transition: color 0.2s; }
     .tab-active { color: #0284c7; position: relative; }
     .tab-active::after {
         content: ''; position: absolute; bottom: 0; left: 25%; width: 50%; height: 4px;
@@ -95,6 +109,7 @@
         font-weight: bold; 
         font-size: 0.875rem; 
         transition: height 0.1s; 
+        /* 確保下拉圖示在安全區域內 */
         padding-top: env(safe-area-inset-top); 
         box-sizing: content-box; 
     }
@@ -118,7 +133,10 @@
       <span v-if="pullDistance > 20">{{ refreshText }}</span>
   </div>
 
-  <div class="px-6 pb-2 rounded-b-[2.5rem] shadow-lg swipe-protected relative z-20" style="background: rgba(255,255,255,0.4); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.6); padding-top: calc(env(safe-area-inset-top) + 2px);">
+  <div class="px-6 pb-2 rounded-b-[2.5rem] shadow-lg swipe-protected relative z-20" 
+       style="background: rgba(255,255,255,0.4); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.6); 
+       padding-top: max(20px, env(safe-area-inset-top) + 10px);">
+    
     <div class="flex justify-between items-center">
         <h1 class="text-xl font-extrabold tracking-tight text-slate-800 drop-shadow-sm">2026 挪威冰島之旅</h1>
         <div class="text-right">
