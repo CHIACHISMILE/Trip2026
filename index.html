@@ -5,7 +5,7 @@
   <title>2026挪威冰島之旅</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="北歐之旅">
+  <meta name="apple-mobile-web-app-title" content="2026挪威冰島之旅">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#dbeafe">
   <link rel="manifest" href="manifest.json">
@@ -447,15 +447,25 @@ createApp({
         if (isHorizontalDrag.value === true) {
             const endX = e.changedTouches[0].clientX;
             const diffX = endX - startX.value;
+            const screenWidth = window.innerWidth;
+            const edgeThreshold = screenWidth * 0.15; // 邊緣判定範圍 15%
+            const isLeftEdge = startX.value < edgeThreshold;
+            const isRightEdge = startX.value > (screenWidth - edgeThreshold);
+
             if (Math.abs(diffX) > 50) {
                 if (tab.value === 'itinerary') {
-                    if (diffX < 0) { switchDay('next'); } 
-                    else { switchDay('prev'); } 
+                    if (diffX < 0) { // 向左滑 (下一頁/天)
+                        if (isRightEdge) switchTab('next'); 
+                        else switchDay('next');
+                    } else { // 向右滑 (上一頁/天)
+                        if (isLeftEdge) { /* Itinerary 是第一個，無上一頁 */ }
+                        else switchDay('prev');
+                    }
                 } else if (tab.value === 'expense') {
-                    if (diffX < 0) { switchTab('next'); } 
-                    else { switchTab('prev'); } 
+                    if (diffX < 0) switchTab('next'); 
+                    else switchTab('prev'); 
                 } else if (tab.value === 'analysis') {
-                    if (diffX > 0) { switchTab('prev'); } 
+                    if (diffX > 0) switchTab('prev'); 
                 }
             }
         }
@@ -467,7 +477,6 @@ createApp({
         else if (direction === 'prev' && idx > 0) { selectDate(tripDates[idx - 1].date); }
     };
 
-    // 關鍵修復：切換到 Analysis 時延遲渲染圖表
     const switchTab = (direction) => {
         const tabs = ['itinerary', 'expense', 'analysis'];
         const currentIdx = tabs.indexOf(tab.value);
