@@ -16,17 +16,32 @@
   <style>
     /* 全局設定：冰河琉璃 */
     html, body {
-        height: 100%; overflow: hidden; 
+        height: 100%; 
+        width: 100%;
+        overflow: hidden; 
         font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; 
-        background: linear-gradient(160deg, #dbeafe 0%, #eff6ff 40%, #f0f9ff 100%);
-        color: #1e3a8a; user-select: none; -webkit-tap-highlight-color: transparent;
+        /* 修正重點：加上 fixed 讓背景不隨滾動跑掉，填滿整個螢幕 */
+        background: linear-gradient(160deg, #dbeafe 0%, #eff6ff 40%, #f0f9ff 100%) fixed;
+        background-attachment: fixed;
+        color: #1e3a8a; 
+        user-select: none; 
+        -webkit-tap-highlight-color: transparent;
     }
     #app { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+    
     .scrollable-content {
-        flex: 1; overflow-y: auto; overflow-x: hidden;
-        -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
-        touch-action: pan-y; position: relative; padding-top: 10px; padding-bottom: 100px;
+        flex: 1; 
+        overflow-y: auto; 
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch; 
+        overscroll-behavior-y: contain;
+        touch-action: pan-y; 
+        position: relative; 
+        padding-top: 10px; 
+        /* 修正重點：底部留出安全距離 + 額外空間，確保最後一個項目不被 Home Bar 擋住 */
+        padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
     }
+
     .glass-card {
         background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.9); border-radius: 20px;
@@ -48,15 +63,7 @@
         border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
     }
     .btn-glacier:active { box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
-    .tab-bar {
-        background: rgba(255, 255, 255, 0.85); 
-        backdrop-filter: blur(20px); 
-        -webkit-backdrop-filter: blur(20px);
-        /* 加上上方邊框，視覺比較清楚 */
-        border-top: 1px solid rgba(255, 255, 255, 0.5);
-        /* 關鍵：底部增加 iPhone Home Bar 的安全高度，並額外加 10px 讓按鈕不要太貼底 */
-        padding-bottom: calc(env(safe-area-inset-bottom) + 10px); 
-    }
+    .tab-bar { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.5); }
     .tab-btn { color: #94a3b8; }
     .tab-active { color: #0284c7; position: relative; }
     .tab-active::after {
@@ -85,8 +92,7 @@
       <span v-if="pullDistance > 10">{{ refreshText }}</span>
   </div>
 
-  <div class="px-6 pb-4 rounded-b-[2.5rem] shadow-lg swipe-protected relative z-20" 
-     style="background: rgba(255,255,255,0.4); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.6); padding-top: calc(env(safe-area-inset-top) + 20px);">
+  <div class="px-6 pb-4 rounded-b-[2.5rem] shadow-lg swipe-protected relative z-20" style="background: rgba(255,255,255,0.4); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.6); padding-top: calc(env(safe-area-inset-top) + 20px);">
     <div class="flex justify-between items-center">
         <h1 class="text-xl font-extrabold tracking-tight text-slate-800 drop-shadow-sm">2026 挪威冰島之旅</h1>
         <div class="text-right">
@@ -249,11 +255,10 @@
 
 <script>
 // --- 重要：請將此處替換為你的 GAS 網址 (記得結尾是 /exec) ---
-const YOUR_GAS_URL = 'https://script.google.com/macros/s/AKfycbz6PZtqLJzlS2a71R-RfZjpJCuqJVPoP7RuNxEe74mS_uvxBejMNGKboFSn2ArNnXAu/exec'; 
+const YOUR_GAS_URL = 'https://script.google.com/macros/s/AKfycbz1gM0J6wO7oWv9l0H5fQ4e2s3t_8r9p0o1n2m3l4k5j6i7h8g9f0e1d2c3b4a5/exec'; 
 
 async function callApi(action, data = null, method = 'GET') {
     let options = { method: method };
-    // Google Script 跨域 POST 需使用 text/plain 以避免 preflight check 失敗
     if (method === 'POST') {
         options.body = JSON.stringify({ action: action, data: data });
         options.headers = { 'Content-Type': 'text/plain;charset=utf-8' };
