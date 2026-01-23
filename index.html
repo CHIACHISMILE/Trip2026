@@ -5,7 +5,7 @@
   <title>2026挪威冰島之旅</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="2026挪威冰島之旅">
+  <meta name="apple-mobile-web-app-title" content="北歐之旅">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#dbeafe">
   <link rel="manifest" href="manifest.json">
@@ -26,7 +26,7 @@
         font-family: 'Inter', 'Noto Sans TC', -apple-system, sans-serif; 
         background-color: #f0f9ff; color: #1e3a8a; 
         user-select: none; -webkit-tap-highlight-color: transparent;
-        overscroll-behavior: none; /* 禁止原生回彈 */
+        overscroll-behavior: none;
     }
 
     #fixed-bg {
@@ -40,34 +40,36 @@
     .scrollable-content {
         flex: 1; overflow-y: auto; overflow-x: hidden;
         -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
-        touch-action: pan-y; /* 允許垂直滑動，但在JS中我們會控制水平滑動 */
+        touch-action: pan-y;
         position: relative; 
         padding-top: 10px; 
         padding-bottom: calc(90px + env(safe-area-inset-bottom));
     }
 
-    /* 美化組件 */
+    /* 卡片與輸入框 */
     .glass-card {
         background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-        border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 24px;
-        box-shadow: 0 8px 20px rgba(148, 163, 184, 0.08); transition: transform 0.15s ease-out;
+        border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 20px;
+        box-shadow: 0 4px 15px rgba(148, 163, 184, 0.08); transition: transform 0.15s ease-out;
     }
-    .glass-card:active { transform: scale(0.98); }
+    .glass-card:active { transform: scale(0.99); }
     
     .glass-input {
         background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(255, 255, 255, 0.6);
         box-shadow: inset 0 2px 4px rgba(0,0,0,0.01); color: #334155; transition: all 0.3s;
     }
-    .glass-input:focus { background: #fff; border-color: #38bdf8; box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.15); }
+    .glass-input:focus { background: #fff; border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15); }
     
+    /* 按鈕樣式 */
     .btn-glacier {
         background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white;
-        border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 6px 15px rgba(14, 165, 233, 0.25);
+        border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
     }
     .btn-glacier:active { box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); transform: translateY(1px); }
     
+    /* Tab Bar */
     .tab-bar { 
-        background: rgba(255, 255, 255, 0.9); 
+        background: rgba(255, 255, 255, 0.95); 
         backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
         border-bottom: 1px solid rgba(255, 255, 255, 0.5); 
         box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.05);
@@ -79,23 +81,28 @@
         background: #0284c7; border-radius: 4px 4px 0 0; box-shadow: 0 -2px 8px rgba(2, 132, 199, 0.5);
     }
 
-    /* 動畫與其他 */
+    /* 動畫 */
     .fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
     .fade-enter-from, .fade-leave-to { opacity: 0; }
     
     .pull-indicator { height: 0; display: flex; justify-content: center; align-items: flex-end; padding-bottom: 5px; overflow: hidden; color: #64748b; font-weight: 600; font-size: 0.8rem; transition: height 0.1s; padding-top: env(safe-area-inset-top); box-sizing: content-box; }
-    .skeleton { background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; }
-    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-
+    
+    /* 捲軸與標題連結 */
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .title-link { text-decoration: none; color: #0f172a; font-weight: 700; border-bottom: 1px dashed #cbd5e1; }
-    .map-btn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-decoration: none; flex-shrink: 0; color: #0284c7; }
+    .map-btn { display: inline-flex; align-items: center; justify-content: center; padding: 4px 8px; background: white; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 10px; font-weight: bold; color: #0284c7; text-decoration: none; flex-shrink: 0; }
     
+    /* 分類標籤顏色條 */
     .cat-traffic { border-left: 4px solid #3b82f6; background: white; }
     .cat-stay { border-left: 4px solid #eab308; background: white; }
     .cat-spot { border-left: 4px solid #a855f7; background: white; }
     .cat-food { border-left: 4px solid #f97316; background: white; }
     .cat-note { border-left: 4px solid #64748b; background: white; }
+    
+    .skeleton { background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .pending-sync { opacity: 0.7; border: 1px dashed #f59e0b; }
+    .pending-badge { background: #f59e0b; color: white; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 5px; }
   </style>
 </head>
 <body>
@@ -103,7 +110,7 @@
 
 <div id="app">
   <div class="pull-indicator" :style="{ height: pullDistance + 'px' }">
-      <span v-if="pullDistance > 20" class="flex items-center gap-1"><span class="animate-bounce">❄️</span> {{ refreshText }}</span>
+      <span v-if="pullDistance > 20">{{ refreshText }}</span>
   </div>
 
   <div class="px-6 pb-4 rounded-b-[2.5rem] shadow-sm swipe-protected relative z-20" 
@@ -111,9 +118,9 @@
        padding-top: max(20px, env(safe-area-inset-top) + 12px);">
     
     <div class="flex justify-between items-center">
-        <h1 class="text-xl font-black tracking-tighter text-slate-800 drop-shadow-sm">2026挪威冰島之旅</h1>
+        <h1 class="text-xl font-black tracking-tighter text-slate-800 drop-shadow-sm">2026 挪威冰島之旅</h1>
         <div class="text-right">
-            <button v-if="syncQueue.length > 0" @click="forceClearSync" class="bg-amber-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg animate-pulse flex items-center gap-1 mb-1 ml-auto">☁️ 待上傳 ({{ syncQueue.length }})</button>
+            <button v-if="syncQueue.length > 0" @click="forceClearSync" class="bg-amber-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg animate-pulse flex items-center gap-1 mb-1 ml-auto">待上傳 ({{ syncQueue.length }})</button>
             <div class="text-lg font-black text-sky-900 leading-none tracking-wide font-mono">{{ todayDate }}</div>
             <div class="text-[10px] text-sky-600 font-bold opacity-80 mt-1 uppercase tracking-[0.2em]">{{ todayWeekday }}</div>
         </div>
@@ -121,7 +128,7 @@
     <div class="flex justify-between items-center mt-4">
         <div class="glass-input px-3 py-1.5 rounded-full text-[10px] font-bold text-slate-500 tracking-wide">AUG 30 - SEP 26</div>
         <div class="flex gap-2">
-            <span v-if="!isOnline" class="bg-slate-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md flex items-center gap-1">⚡ 離線</span>
+            <span v-if="!isOnline" class="bg-slate-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md flex items-center gap-1">離線</span>
             <span v-if="tripStatus" class="bg-gradient-to-r from-sky-400 to-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md">{{ tripStatus }}</span>
         </div>
     </div>
@@ -159,13 +166,13 @@
                     <a v-else :href="evt.link" target="_blank" class="title-link text-base leading-tight">{{ evt.title }}</a>
                 </div>
                 <div class="text-xs mt-2 text-slate-500 flex items-start gap-2" v-if="evt.location">
-                    <span class="flex-1 pt-1 opacity-80">{{ evt.location }}</span>
-                    <a :href="'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(evt.location)" target="_blank" class="map-btn">📍</a>
+                    <span class="flex-1 pt-1 opacity-80">📍 {{ evt.location }}</span>
+                    <a :href="'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(evt.location)" target="_blank" class="map-btn">地圖</a>
                 </div>
                 <div class="text-sm mt-3 text-slate-600 whitespace-pre-wrap opacity-90" v-if="evt.note">{{ evt.note }}</div>
                 <div class="mt-3 flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity"> 
-                   <button @click="openEditItin(evt)" class="text-[10px] text-sky-600 bg-sky-50 border border-sky-100 px-3 py-1.5 rounded-full font-bold">編輯</button>
-                   <button @click="deleteItin(evt)" class="text-[10px] text-red-500 bg-red-50 border border-red-100 px-3 py-1.5 rounded-full font-bold">刪除</button>
+                   <button @click="openEditItin(evt)" class="text-[10px] text-sky-600 bg-sky-50 border border-sky-100 px-3 py-1 rounded-lg font-bold">編輯</button>
+                   <button @click="deleteItin(evt)" class="text-[10px] text-red-500 bg-red-50 border border-red-100 px-3 py-1 rounded-lg font-bold">刪除</button>
                 </div>
             </div>
           </div>
@@ -178,12 +185,12 @@
       <div class="glass-card p-6 space-y-5 shadow-lg">
         <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2"><span class="w-1 h-6 bg-sky-500 rounded-full"></span>新增消費</h3>
         <div class="flex gap-3">
-           <select v-model="newExp.payer" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold"><option value="" disabled selected>泥是誰</option><option>家齊</option><option>亭穎</option><option>媽媽</option></select>
-           <select v-model="newExp.location" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold"><option value="" disabled selected>在哪消費</option><option>台灣</option><option>杜拜</option><option>挪威</option><option>冰島</option><option>英國</option></select>
+           <select v-model="newExp.payer" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold"><option value="" disabled selected>付款人</option><option>家齊</option><option>亭穎</option><option>媽媽</option></select>
+           <select v-model="newExp.location" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold"><option value="" disabled selected>地點</option><option>台灣</option><option>杜拜</option><option>挪威</option><option>冰島</option><option>英國</option></select>
         </div>
         <div class="flex gap-3">
-           <select v-model="newExp.item" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold"><option value="" disabled selected>消費項目</option><option>早餐</option><option>午餐</option><option>晚餐</option><option>零食</option><option>住宿</option><option>交通（機票）</option><option>交通（租車）</option><option>交通（停車費）</option><option>交通（油錢）</option><option>紀念品</option><option>門票</option><option>其他</option></select>
-           <select v-model="newExp.payment" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold"><option value="" disabled selected>付款方式</option><option>現金</option><option>信用卡-國泰</option><option>信用卡-永豐</option><option>信用卡-元大</option></select>
+           <select v-model="newExp.item" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold"><option value="" disabled selected>項目</option><option>早餐</option><option>午餐</option><option>晚餐</option><option>零食</option><option>住宿</option><option>交通（機票）</option><option>交通（租車）</option><option>交通（停車費）</option><option>交通（油錢）</option><option>紀念品</option><option>門票</option><option>其他</option></select>
+           <select v-model="newExp.payment" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold"><option value="" disabled selected>方式</option><option>現金</option><option>信用卡-國泰</option><option>信用卡-永豐</option><option>信用卡-元大</option></select>
         </div>
         <div class="flex gap-3">
            <select v-model="newExp.currency" class="w-1/3 glass-input p-3 rounded-xl text-sm outline-none font-bold text-sky-700 bg-sky-50/50"><option>NTD</option><option>NOK</option><option>ISK</option><option>EUR</option><option>GBP</option><option>AED</option></select>
@@ -192,19 +199,19 @@
         <div class="text-xs text-right text-slate-400 font-mono font-bold" v-if="newExp.amount && newExp.currency !== 'NTD'">≈ {{ formatNumber(Math.round(newExp.amount * rates[newExp.currency])) }} NTD</div>
         <input v-model="newExp.note" placeholder="備註 (選填)" class="w-full glass-input p-3 rounded-xl text-sm outline-none">
         <div class="bg-slate-50/50 p-4 rounded-xl border border-slate-100">
-           <div class="flex justify-between items-center mb-3"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">分攤對象</span><button @click="toggleSelectAll" class="text-[10px] text-sky-600 font-bold bg-white px-2 py-1 rounded shadow-sm">全選</button></div>
+           <div class="flex justify-between items-center mb-3"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">分攤給</span><button @click="toggleSelectAll" class="text-[10px] text-sky-600 font-bold bg-white px-2 py-1 rounded shadow-sm">全選</button></div>
            <div class="flex gap-2 flex-wrap">
              <label v-for="m in members" :key="m" class="flex flex-1 justify-center items-center space-x-2 border px-4 py-3 rounded-xl cursor-pointer transition-all duration-200" :class="newExp.involved.includes(m)?'bg-white border-sky-400 text-sky-700 shadow-md transform -translate-y-0.5':'bg-transparent border-slate-200 text-slate-400'">
                <input type="checkbox" :value="m" v-model="newExp.involved" class="hidden"><span class="text-sm font-bold">{{m}}</span>
              </label>
            </div>
         </div>
-        <button @click="submitExp" class="w-full btn-glacier py-4 rounded-xl font-bold text-lg tracking-wide">送出記帳</button>
+        <button @click="submitExp" class="w-full btn-glacier py-4 rounded-xl font-bold text-lg tracking-wide">確認記帳</button>
       </div>
     </div>
 
     <div v-else-if="tab==='analysis'" key="analysis">
-        <div class="flex justify-end mb-3"><button @click="openRateModal" class="text-xs text-slate-500 bg-white/50 border border-white px-4 py-2 rounded-full flex items-center shadow-sm backdrop-blur-sm font-bold">⚙️ 設定</button></div>
+        <div class="flex justify-end mb-3"><button @click="openRateModal" class="text-xs text-slate-500 bg-white/50 border border-white px-4 py-2 rounded-full flex items-center shadow-sm backdrop-blur-sm font-bold">匯率設定</button></div>
         
         <div class="bg-gradient-to-br from-[#3b82f6] to-[#6366f1] text-white rounded-3xl p-6 shadow-xl mb-6 relative overflow-hidden ring-1 ring-white/20">
            <div class="absolute -top-10 -right-10 w-48 h-48 bg-white opacity-10 rounded-full blur-3xl"></div>
@@ -217,7 +224,9 @@
         </div>
 
         <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-slate-700 text-lg">消費明細</h3><select v-model="filterDate" class="glass-input px-3 py-1.5 rounded-lg text-xs text-slate-600 outline-none font-bold"><option value="ALL">全部日期</option><option v-for="d in uniqueExpDates" :value="d">{{ d }}</option></select></div>
+        
         <div class="glass-card p-4 mb-6"><div class="relative h-64 w-full"> <canvas id="expenseChart"></canvas></div></div>
+        
         <div class="space-y-3 mb-8">
             <div v-for="exp in filteredExpenses" :class="['glass-card p-4 flex justify-between items-center transition hover:shadow-md border-l-4 border-l-sky-400', exp.isPending ? 'pending-sync' : '']">
                 <div class="flex justify-between items-center w-full">
@@ -230,10 +239,16 @@
                     <div class="text-right min-w-[90px]">
                         <div class="font-bold text-slate-800 text-lg tracking-tight">{{ exp.amount }} <span class="text-[10px] text-slate-400 font-bold">{{ exp.currency }}</span></div>
                         <div v-if="exp.currency !== 'NTD'" class="text-[10px] text-slate-400 font-mono font-bold mt-1">≈ {{ formatNumber(getAmountTWD(exp)) }}</div>
-                        <div class="mt-3 flex gap-2 justify-end opacity-60 hover:opacity-100 transition"><button @click="openEditExp(exp)" class="text-[10px] text-sky-600 bg-white border border-sky-100 px-2 py-1 rounded">✏️</button><button @click="deleteExp(exp)" class="text-[10px] text-red-500 bg-white border border-red-100 px-2 py-1 rounded">🗑️</button></div>
+                        <div class="mt-3 flex gap-2 justify-end opacity-60 hover:opacity-100 transition"><button @click="openEditExp(exp)" class="text-[10px] text-sky-600 bg-white border border-sky-100 px-2 py-1 rounded">編輯</button><button @click="deleteExp(exp)" class="text-[10px] text-red-500 bg-white border border-red-100 px-2 py-1 rounded">刪除</button></div>
                     </div>
                 </div>
             </div>
+            <div v-if="filteredExpenses.length===0" class="text-center text-slate-400 py-12 text-sm glass-panel rounded-2xl">尚無消費紀錄</div>
+        </div>
+        <div class="glass-card p-6 mb-8">
+           <h3 class="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center">分帳結算</h3>
+           <div v-for="d in debts" class="flex justify-between items-center py-3 text-sm border-b border-slate-50 last:border-0"><span class="flex items-center gap-2"><span class="font-bold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-100">{{d.from}}</span> <span class="text-slate-300 font-bold">-></span> <span class="font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-100">{{d.to}}</span></span><span class="font-bold text-slate-800 font-mono text-base">{{ formatNumber(d.amount) }}</span></div>
+           <div v-if="debts.length===0" class="text-center text-slate-400 text-xs py-2">目前大家都付得剛剛好，沒有欠款！</div>
         </div>
     </div>
     </Transition>
@@ -278,9 +293,6 @@
 </div>
 
 <script>
-// ====================================================================================
-// 🔴 務必確認這裡是你自己的 GAS 網址（結尾是 /exec）
-// ====================================================================================
 const YOUR_GAS_URL = 'https://script.google.com/macros/s/AKfycbz6PZtqLJzlS2a71R-RfZjpJCuqJVPoP7RuNxEe74mS_uvxBejMNGKboFSn2ArNnXAu/exec'; 
 
 if ('serviceWorker' in navigator) {
@@ -332,7 +344,6 @@ createApp({
     const todayDate = ref('');
     const todayWeekday = ref('');
     
-    // Status Logic
     const tripStatus = computed(() => {
       const now = new Date();
       const start = new Date('2026-08-30');
@@ -365,13 +376,12 @@ createApp({
     const tempRates = ref({});
     let chartInstance = null;
 
-    // Pull to Refresh & Swipe Logic
     const pullDistance = ref(0);
     const startY = ref(0);
     const startX = ref(0);
     const isPulling = ref(false);
     const isHorizontalDrag = ref(null); 
-    const refreshText = computed(() => isPullRefreshing.value ? '更新中...' : '放開更新');
+    const refreshText = computed(() => isPullRefreshing.value ? '更新中...' : '下拉更新');
 
     const initDate = () => {
         const now = new Date();
@@ -383,18 +393,16 @@ createApp({
     window.addEventListener('online', () => { isOnline.value = true; processSyncQueue(); });
     window.addEventListener('offline', () => { isOnline.value = false; });
 
-    // 🔴 核心修復：優化滑動判定邏輯
     const handleTouchStart = (e) => { 
-        if (e.target.closest('.swipe-protected')) return; // 防止在橫向捲動區塊(如日期列)觸發
+        if (e.target.closest('.swipe-protected')) return; 
         const touch = e.touches[0];
         startY.value = touch.clientY; startX.value = touch.clientX; 
         
         const scroller = scrollContainer.value;
         const isTop = scroller ? scroller.scrollTop <= 0 : false;
         
-        // 只有在頂部時才允許下拉更新，但在任何位置都允許左右滑動判定
         isPulling.value = true; 
-        isHorizontalDrag.value = null; // 重置判定
+        isHorizontalDrag.value = null; 
     };
 
     const handleTouchMove = (e) => {
@@ -403,20 +411,14 @@ createApp({
         const diffY = touch.clientY - startY.value;
         const diffX = touch.clientX - startX.value;
         
-        // 第一次判定方向
         if (isHorizontalDrag.value === null) {
-            // 移動太小不判定
             if (Math.abs(diffX) < 10 && Math.abs(diffY) < 10) return;
-            
-            // 如果 X 軸移動大於 Y 軸，判定為橫向滑動
             isHorizontalDrag.value = Math.abs(diffX) > Math.abs(diffY);
         }
         
         if (isHorizontalDrag.value === true) {
-            // 🔴 關鍵：若是橫向滑動，阻止預設行為（防止畫面上下捲動），讓滑動更順暢
             if(e.cancelable) e.preventDefault(); 
         } else {
-            // 縱向滑動：處理下拉更新
             const scroller = scrollContainer.value;
             const isTop = scroller ? scroller.scrollTop <= 0 : true;
             if (isTop && diffY > 0) {
@@ -430,23 +432,17 @@ createApp({
         if (!isPulling.value) return;
         isPulling.value = false;
         
-        // 下拉更新觸發
         if (pullDistance.value > 60) { pullDistance.value = 60; isPullRefreshing.value = true; loadData(); return; }
         else pullDistance.value = 0;
         
-        // 左右滑動觸發邏輯
         if (isHorizontalDrag.value === true) {
             const endX = e.changedTouches[0].clientX;
             const diffX = endX - startX.value;
-            
-            // 只要滑動距離超過 50px 就觸發
             if (Math.abs(diffX) > 50) {
                 if (tab.value === 'itinerary') {
-                    // 行程頁面：左右滑動切換日期
-                    if (diffX < 0) { switchDay('next'); } // 向左滑 -> 下一天
-                    else { switchDay('prev'); } // 向右滑 -> 上一天
+                    if (diffX < 0) { switchDay('next'); } 
+                    else { switchDay('prev'); } 
                 } else if (tab.value === 'expense') {
-                    // 記帳頁面：切換分頁
                     if (diffX < 0) { switchTab('next'); } 
                     else { switchTab('prev'); } 
                 } else if (tab.value === 'analysis') {
@@ -458,18 +454,20 @@ createApp({
 
     const switchDay = (direction) => {
         const idx = tripDates.findIndex(d => d.date === selDate.value);
-        if (direction === 'next' && idx < tripDates.length - 1) { 
-            selectDate(tripDates[idx + 1].date); 
-        } else if (direction === 'prev' && idx > 0) { 
-            selectDate(tripDates[idx - 1].date); 
-        }
+        if (direction === 'next' && idx < tripDates.length - 1) { selectDate(tripDates[idx + 1].date); } 
+        else if (direction === 'prev' && idx > 0) { selectDate(tripDates[idx - 1].date); }
     };
 
+    // 關鍵修復：切換到 Analysis 時延遲渲染圖表
     const switchTab = (direction) => {
         const tabs = ['itinerary', 'expense', 'analysis'];
         const currentIdx = tabs.indexOf(tab.value);
-        if (direction === 'next' && currentIdx < 2) { tab.value = tabs[currentIdx + 1]; if (tab.value === 'analysis') nextTick(() => renderChart()); } 
-        else if (direction === 'prev' && currentIdx > 0) { tab.value = tabs[currentIdx - 1]; }
+        if (direction === 'next' && currentIdx < 2) { 
+            tab.value = tabs[currentIdx + 1]; 
+            if (tab.value === 'analysis') changeTabToAnalysis();
+        } else if (direction === 'prev' && currentIdx > 0) { 
+            tab.value = tabs[currentIdx - 1]; 
+        }
     };
 
     const saveLocal = (data) => {
@@ -498,7 +496,7 @@ createApp({
       if (!isPullRefreshing.value) isLoading.value = true;
       if (loadLocal()) {
           if (isFirstLoad.value) { nextTick(() => { checkAndScrollToToday(); }); isFirstLoad.value = false; }
-          if(tab.value === 'analysis') nextTick(() => renderChart());
+          if(tab.value === 'analysis') changeTabToAnalysis();
           setTimeout(() => { if (!isPullRefreshing.value) isLoading.value = false; }, 300); 
       }
       if(!isOnline.value) { isLoading.value = false; isPullRefreshing.value = false; pullDistance.value = 0; return; }
@@ -511,7 +509,7 @@ createApp({
             members.value = res.members;
             rates.value = res.rates;
             saveLocal(res);
-            if(tab.value === 'analysis') nextTick(() => renderChart());
+            if(tab.value === 'analysis') changeTabToAnalysis();
          }
       } catch(e) { }
       finally {
@@ -622,7 +620,7 @@ createApp({
             callApi('updateRates', tempRates.value, 'POST').then(res => {
                 expenses.value = res.expenses; rates.value = res.rates; saveLocal(res);
                 showRateModal.value = false; isLoading.value = false;
-                if(tab.value === 'analysis') nextTick(() => renderChart());
+                if(tab.value === 'analysis') changeTabToAnalysis();
             });
         }
     };
@@ -673,10 +671,18 @@ createApp({
     const getEvents = (d) => itinerary.value.filter(e => e.date === d).sort((a,b)=>a.startTime.localeCompare(b.startTime));
     const formatNumber = (n) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-    const changeTabToAnalysis = () => { tab.value = 'analysis'; nextTick(() => renderChart()); };
+    // 關鍵修復：加入延遲確保 DOM 生成
+    const changeTabToAnalysis = () => { 
+        tab.value = 'analysis'; 
+        // 延遲 300ms 等待 Transition 動畫結束，確保 Canvas 存在
+        setTimeout(() => {
+            renderChart();
+        }, 300);
+    };
+
     const renderChart = () => {
         const ctx = document.getElementById('expenseChart');
-        if(!ctx) return;
+        if(!ctx) return; // 再次檢查，防止報錯
         const stats = {};
         filteredExpenses.value.forEach(e => { if(!stats[e.item]) stats[e.item] = 0; stats[e.item] += getAmountTWD(e); });
         const nordicColors = ['#38bdf8', '#818cf8', '#c084fc', '#f472b6', '#fb7185', '#22d3ee', '#34d399', '#a78bfa', '#fbcfe8', '#e2e8f0'];
