@@ -46,13 +46,6 @@
         padding-bottom: calc(90px + env(safe-area-inset-bottom));
     }
 
-    /* 關鍵修正：允許選取文字的區域 */
-    .allow-select { 
-        -webkit-user-select: text !important; 
-        user-select: text !important; 
-        cursor: text; 
-    }
-
     /* 卡片與輸入框 */
     .glass-card {
         background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
@@ -105,6 +98,19 @@
     @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     .pending-sync { opacity: 0.7; border: 1px dashed #f59e0b; }
     .pending-badge { background: #f59e0b; color: white; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 5px; }
+
+    /* 關鍵修復：允許選取文字 & 多行隱藏 */
+    .allow-select { 
+        user-select: text !important; 
+        -webkit-user-select: text !important; 
+        cursor: text; 
+    }
+    .line-clamp-6 {
+        display: -webkit-box;
+        -webkit-line-clamp: 6;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
   </style>
 </head>
 <body>
@@ -157,7 +163,7 @@
           <div class="text-center mb-6">
             <div class="inline-block glass-input px-6 py-2 rounded-full text-sm font-bold text-slate-600 shadow-sm">{{ getDayInfo(selDate) }}</div>
           </div>
-          <div v-for="evt in getEvents(selDate)" :class="['glass-card flex mb-4 items-stretch overflow-hidden', evt.isPending ? 'pending-sync' : '', getCategoryClass(evt.category)]">
+          <div v-for="evt in getEvents(selDate)" :class="['glass-card flex mb-4 items-stretch overflow-hidden group', evt.isPending ? 'pending-sync' : '', getCategoryClass(evt.category)]">
             <div class="w-16 flex flex-col justify-center items-center p-2 bg-slate-50/50 border-r border-slate-100">
               <div class="font-black text-sm text-slate-700">{{ evt.startTime }}</div>
               <div v-if="evt.endTime" class="text-[10px] text-slate-400 mt-1 font-medium">{{ evt.endTime }}</div>
@@ -165,20 +171,26 @@
                 {{ evt.category }}
               </div>
             </div>
-            <div class="flex-1 p-4 relative">
+            <div class="flex-1 p-4 relative" @click="toggleExpand(evt.row)">
                 <div class="flex justify-between items-start">
-                    <span v-if="!evt.link" class="font-bold text-base text-slate-800 leading-tight allow-select">{{ evt.title }}</span>
-                    <a v-else :href="evt.link" target="_blank" class="title-link text-base leading-tight allow-select">{{ evt.title }}</a>
+                    <span v-if="!evt.link" class="font-bold text-base text-slate-800 leading-tight">{{ evt.title }}</span>
+                    <a v-else :href="evt.link" target="_blank" class="title-link text-base leading-tight">{{ evt.title }}</a>
                 </div>
                 <div class="text-xs mt-2 text-slate-500 flex items-start gap-2" v-if="evt.location">
-                    <span class="flex-1 pt-1 opacity-80 allow-select">📍 {{ evt.location }}</span>
+                    <span class="flex-1 pt-1 opacity-80">📍 {{ evt.location }}</span>
                     <a :href="'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(evt.location)" target="_blank" class="map-btn">地圖</a>
                 </div>
-                <div class="text-sm mt-3 text-slate-600 whitespace-pre-wrap opacity-90 allow-select" v-if="evt.note">{{ evt.note }}</div>
                 
-                <div class="mt-4 flex gap-2 justify-end prevent-swipe"> 
-                   <button @click.stop="openEditItin(evt)" class="text-[10px] text-sky-600 bg-sky-50 border border-sky-100 px-3 py-1.5 rounded-lg font-bold active:bg-sky-100">編輯</button>
-                   <button @click.stop="deleteItin(evt)" class="text-[10px] text-red-500 bg-red-50 border border-red-100 px-3 py-1.5 rounded-lg font-bold active:bg-red-100">刪除</button>
+                <div 
+                    class="text-sm mt-3 text-slate-600 whitespace-pre-wrap opacity-90 allow-select swipe-protected" 
+                    :class="{'line-clamp-6': expandedId !== evt.row}"
+                    v-if="evt.note">
+                    {{ evt.note }}
+                </div>
+                
+                <div class="mt-3 flex gap-2 justify-end transition-opacity"> 
+                   <button @click.stop="openEditItin(evt)" class="text-[10px] text-sky-600 bg-sky-50 border border-sky-100 px-3 py-1 rounded-lg font-bold">編輯</button>
+                   <button @click.stop="deleteItin(evt)" class="text-[10px] text-red-500 bg-red-50 border border-red-100 px-3 py-1 rounded-lg font-bold">刪除</button>
                 </div>
             </div>
           </div>
@@ -192,7 +204,7 @@
         <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2"><span class="w-1 h-6 bg-sky-500 rounded-full"></span>新增消費</h3>
         <div class="flex gap-3">
            <select v-model="newExp.payer" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold"><option value="" disabled selected>泥是誰</option><option>家齊</option><option>亭穎</option><option>媽媽</option></select>
-           <select v-model="newExp.location" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold"><option value="" disabled selected>在哪消費</option><option>台灣</option><option>杜拜</option><option>挪威</option><option>冰島</option><option>英國</option></select>
+           <select v-model="newExp.location" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold"><option value="" disabled selected>消費地區</option><option>台灣</option><option>杜拜</option><option>挪威</option><option>冰島</option><option>英國</option></select>
         </div>
         <div class="flex gap-3">
            <select v-model="newExp.item" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold"><option value="" disabled selected>消費項目</option><option>早餐</option><option>午餐</option><option>晚餐</option><option>零食</option><option>住宿</option><option>交通（機票）</option><option>交通（租車）</option><option>交通（停車費）</option><option>交通（油錢）</option><option>紀念品</option><option>門票</option><option>其他</option></select>
@@ -251,7 +263,7 @@
                     <div class="text-right min-w-[90px]">
                         <div class="font-bold text-slate-800 text-lg tracking-tight">{{ exp.amount }} <span class="text-[10px] text-slate-400 font-bold">{{ exp.currency }}</span></div>
                         <div v-if="exp.currency !== 'NTD'" class="text-[10px] text-slate-400 font-mono font-bold mt-1">≈ {{ formatNumber(getAmountTWD(exp)) }}</div>
-                        <div class="mt-3 flex gap-2 justify-end opacity-60 hover:opacity-100 transition prevent-swipe"><button @click.stop="openEditExp(exp)" class="text-[10px] text-sky-600 bg-white border border-sky-100 px-2 py-1 rounded">編輯</button><button @click.stop="deleteExp(exp)" class="text-[10px] text-red-500 bg-white border border-red-100 px-2 py-1 rounded">刪除</button></div>
+                        <div class="mt-3 flex gap-2 justify-end opacity-60 hover:opacity-100 transition"><button @click="openEditExp(exp)" class="text-[10px] text-sky-600 bg-white border border-sky-100 px-2 py-1 rounded">編輯</button><button @click="deleteExp(exp)" class="text-[10px] text-red-500 bg-white border border-red-100 px-2 py-1 rounded">刪除</button></div>
                     </div>
                 </div>
             </div>
@@ -356,6 +368,13 @@ createApp({
     const todayDate = ref('');
     const todayWeekday = ref('');
     
+    // 展開狀態 ID
+    const expandedId = ref(null);
+    const toggleExpand = (id) => {
+        if(expandedId.value === id) expandedId.value = null;
+        else expandedId.value = id;
+    };
+
     const tripStatus = computed(() => {
       const now = new Date();
       const start = new Date('2026-08-30');
@@ -405,15 +424,9 @@ createApp({
     window.addEventListener('online', () => { isOnline.value = true; processSyncQueue(); });
     window.addEventListener('offline', () => { isOnline.value = false; });
 
+    // 關鍵修改：排除 allow-select 的觸控事件，確保可以選取文字
     const handleTouchStart = (e) => { 
-        if (e.target.closest('.swipe-protected')) return; 
-        
-        // 修正：如果點擊到可選取的文字或按鈕，不啟動滑動偵測
-        if (e.target.closest('.allow-select') || e.target.closest('.prevent-swipe') || e.target.closest('button')) {
-            isPulling.value = false;
-            return;
-        }
-
+        if (e.target.closest('.swipe-protected') || e.target.closest('.allow-select')) return; 
         const touch = e.touches[0];
         startY.value = touch.clientY; startX.value = touch.clientX; 
         
@@ -457,25 +470,29 @@ createApp({
         if (isHorizontalDrag.value === true) {
             const endX = e.changedTouches[0].clientX;
             const diffX = endX - startX.value;
+            
+            // 邊緣切換判定 (左 15% / 右 15%)
             const screenWidth = window.innerWidth;
-            const edgeThreshold = screenWidth * 0.15; // 15% 邊緣
+            const edgeThreshold = screenWidth * 0.15;
             const isLeftEdge = startX.value < edgeThreshold;
             const isRightEdge = startX.value > (screenWidth - edgeThreshold);
 
             if (Math.abs(diffX) > 50) {
                 if (tab.value === 'itinerary') {
-                    if (diffX < 0) { // 向左滑
-                        if (isRightEdge) switchTab('next'); 
-                        else switchDay('next');
-                    } else { // 向右滑
-                        if (isLeftEdge) { /* No prev tab */ }
-                        else switchDay('prev');
+                    if (diffX < 0) { 
+                        // 往左滑 (Next)
+                        if (isRightEdge) switchTab('next'); // 右邊緣 -> 切換分頁
+                        else switchDay('next'); // 中間 -> 切換日期
+                    } else { 
+                        // 往右滑 (Prev)
+                        if (!isLeftEdge) switchDay('prev'); // 中間 -> 切換日期
+                        // 左邊緣 -> 無動作 (因為是第一個分頁)
                     }
                 } else if (tab.value === 'expense') {
-                    if (diffX < 0 && isRightEdge) switchTab('next'); 
-                    else if (diffX > 0 && isLeftEdge) switchTab('prev'); 
+                    if (diffX < 0) switchTab('next'); 
+                    else switchTab('prev'); 
                 } else if (tab.value === 'analysis') {
-                    if (diffX > 0 && isLeftEdge) switchTab('prev'); 
+                    if (diffX > 0) switchTab('prev'); 
                 }
             }
         }
@@ -707,10 +724,8 @@ createApp({
     const getEvents = (d) => itinerary.value.filter(e => e.date === d).sort((a,b)=>a.startTime.localeCompare(b.startTime));
     const formatNumber = (n) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-    // 關鍵修復：加入延遲確保 DOM 生成
     const changeTabToAnalysis = () => { 
         tab.value = 'analysis'; 
-        // 延遲 300ms 等待 Transition 動畫結束，確保 Canvas 存在
         setTimeout(() => {
             renderChart();
         }, 300);
@@ -718,7 +733,7 @@ createApp({
 
     const renderChart = () => {
         const ctx = document.getElementById('expenseChart');
-        if(!ctx) return; // 再次檢查，防止報錯
+        if(!ctx) return; 
         const stats = {};
         filteredExpenses.value.forEach(e => { if(!stats[e.item]) stats[e.item] = 0; stats[e.item] += getAmountTWD(e); });
         const nordicColors = ['#38bdf8', '#818cf8', '#c084fc', '#f472b6', '#fb7185', '#22d3ee', '#34d399', '#a78bfa', '#fbcfe8', '#e2e8f0'];
@@ -754,7 +769,7 @@ createApp({
     });
 
     return { tab, isLoading, members, expenses, itinerary, tripDates, selDate, filterDate, rates, newExp, showItinModal, showExpModal, showRateModal, isEditing, itinForm, editExpForm, tempRates, filteredExpenses, uniqueExpDates, getAmountTWD, changeTabToAnalysis, renderChart, getCategoryClass, getDayInfo, getEvents, formatNumber, toggleSelectAll, submitExp, openAddItin, openEditItin, deleteItin, submitItin, deleteExp, openEditExp, submitEditExp, debts, selectDate, dateContainer, scrollContainer,
-    handleTouchStart, handleTouchMove, handleTouchEnd, pullDistance, isPullRefreshing, refreshText, tripStatus, publicSpent, momSpent, openRateModal, saveAndRecalculateRates, todayDate, todayWeekday, isOnline, syncQueue, processSyncQueue, forceClearSync };
+    handleTouchStart, handleTouchMove, handleTouchEnd, pullDistance, isPullRefreshing, refreshText, tripStatus, publicSpent, momSpent, openRateModal, saveAndRecalculateRates, todayDate, todayWeekday, isOnline, syncQueue, processSyncQueue, forceClearSync, expandedId, toggleExpand };
   }
 }).mount('#app');
 </script>
