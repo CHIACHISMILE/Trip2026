@@ -678,7 +678,7 @@ createApp({
       now.setHours(0,0,0,0); start.setHours(0,0,0,0); end.setHours(0,0,0,0);
       if (now < start) return `倒數 ${Math.ceil((start - now)/86400000)} 天`;
       if (now >= start && now <= end) return '旅程中';
-      return '';
+      return '回味無窮';
     });
 
     const tripDates = [];
@@ -905,6 +905,13 @@ createApp({
     // Core Sync Logic with Instant Feedback
     // ==========================================
     
+    // 修正點 1: 新增這個 Helper 來轉換正確的後端指令名稱
+    const getBackendActionName = (type, action) => {
+      if (action === 'delete') return 'deleteRow';
+      const suffix = (type === 'itin') ? 'Itinerary' : 'Expense';
+      return action + suffix; // e.g., addItinerary, editExpense
+    };
+
     // Process queue when online (Background Sync)
     const processSyncQueue = async () => {
       if (syncQueue.value.length === 0 || !navigator.onLine || isSyncing.value) return;
@@ -915,7 +922,8 @@ createApp({
 
       for (const job of queue) {
         try {
-          const apiAction = job.action + (job.type === 'itin' ? 'Itin' : 'Exp');
+          // 修正點 2: 使用 helper 產生正確名稱
+          const apiAction = getBackendActionName(job.type, job.action);
           const res = await callApi(apiAction, job.data, 'POST');
           
           if (!res) {
@@ -937,21 +945,19 @@ createApp({
     const handleCRUD = async (type, action, data) => {
        // 1. Try Online Sync Immediately
        if (navigator.onLine) {
-         isSyncing.value = true; // SHOW "同步中..."
+         isSyncing.value = true;
          try {
-           const apiAction = action + (type === 'itin' ? 'Itin' : 'Exp');
+           // 修正點 3: 使用 helper 產生正確名稱
+           const apiAction = getBackendActionName(type, action);
            const res = await callApi(apiAction, data, 'POST');
            if (!res) throw new Error("API Fail");
            
-           // Success: isSyncing will be set to false in finally
          } catch (e) {
-           // Fail: Push to queue, SHOW "待上傳"
            syncQueue.value.push({ type, action, data });
          } finally {
-           isSyncing.value = false; // HIDE "同步中..."
+           isSyncing.value = false;
          }
        } else {
-         // Offline: Push to queue directly
          syncQueue.value.push({ type, action, data });
        }
        saveLocal({});
@@ -1031,7 +1037,7 @@ createApp({
         case '住宿': return 'cat-stay';
         case '景點': return 'cat-spot';
         case '飲食': return 'cat-food';
-        default: return 'cat-note'; // Covers '其他'
+        default: return 'cat-note';
       }
     };
 
@@ -1213,7 +1219,8 @@ createApp({
         syncQueue.value.splice(pendingIdx, 1);
         saveLocal({});
       } else {
-        handleCRUD('itin', 'delete', evt);
+        // 修正點 4: 傳送 deleteRow 需要 sheetName
+        handleCRUD('itin', 'delete', { row: evt.row, sheetName: 'Itinerary' });
       }
     };
 
@@ -1229,7 +1236,8 @@ createApp({
         syncQueue.value.splice(pendingIdx, 1);
         saveLocal({});
       } else {
-        handleCRUD('exp', 'delete', exp);
+        // 修正點 5: 傳送 deleteRow 需要 sheetName
+        handleCRUD('exp', 'delete', { row: exp.row, sheetName: 'Expenses' });
       }
     };
 
@@ -1282,6 +1290,8 @@ createApp({
        rates.value = { ...tempRates.value };
        saveLocal({});
        showRateModal.value = false;
+       // 同步更新後端匯率
+       callApi('updateRates', rates.value, 'POST');
     };
 
     const confirmClearSync = () => { 
