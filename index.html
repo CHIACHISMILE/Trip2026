@@ -454,11 +454,6 @@
 
                 <div class="text-xs text-slate-500 mt-2 flex items-center flex-wrap gap-2">
                   <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-bold">{{ exp.payer }}</span>
-                  
-                  <span v-if="exp.involved && exp.involved.length > 0" class="bg-orange-50 px-2 py-0.5 rounded text-orange-700 font-bold border border-orange-100 flex items-center gap-1">
-                     <span class="text-[9px] opacity-60">分</span>{{ exp.involved.join('、') }}
-                  </span>
-
                   <span class="text-sky-600 font-bold bg-sky-50 px-2 py-0.5 rounded">{{ exp.payment }}</span>
                   <span class="text-slate-400 font-medium">{{ exp.location }}</span>
                 </div>
@@ -519,7 +514,7 @@
           <div>
             <label class="text-[10px] font-bold text-slate-400 uppercase">類別</label>
             <div class="flex gap-2 mt-1">
-              <button v-for="c in ['景點','飲食','交通','住宿','其他']" :key="c" @click="itinForm.category=c"
+              <button v-for="c in ['景點','飲食','交通','住宿']" :key="c" @click="itinForm.category=c"
                       :class="['flex-1 py-2 rounded-xl text-xs font-bold border transition',
                                itinForm.category===c ? 'bg-sky-500 text-white border-sky-500 shadow-md' : 'bg-white text-slate-500 border-slate-200']">
                 {{c}}
@@ -717,6 +712,7 @@ createApp({
       }
     };
 
+/* iOS Gesture Engine - Modified for 15% Edge Swipe */
     const attachGestureListeners = () => {
       const el = scrollContainer.value;
       if (!el) return;
@@ -730,10 +726,13 @@ createApp({
         gesture.startX = t.clientX;
         gesture.startY = t.clientY;
         
-        // Define edge zones (40px)
+        // --- 修改點開始：計算 15% 寬度 ---
         const w = window.innerWidth;
-        gesture.startedAtLeftEdge = (gesture.startX <= 40);
-        gesture.startedAtRightEdge = (gesture.startX >= w - 40);
+        const edgeThreshold = w * 0.15; // 畫面寬度的 15%
+        
+        gesture.startedAtLeftEdge = (gesture.startX <= edgeThreshold);
+        gesture.startedAtRightEdge = (gesture.startX >= w - edgeThreshold);
+        // --- 修改點結束 ---
 
         gesture.inSelectable = !!e.target.closest('.allow-select');
         gesture.selectIntent = false;
@@ -769,19 +768,16 @@ createApp({
           gesture.mode = (absX > absY) ? 'h' : 'v';
         }
 
+        // 水平滑動模式
         if (gesture.mode === 'h') {
-          // If edge swipe, allow default to prevent blocking, but usually we want to capture
-          // For SPA tab switching, we capture.
+          // 如果是從邊緣開始滑動，阻止瀏覽器預設的上一頁/下一頁行為
           if ((gesture.startedAtLeftEdge || gesture.startedAtRightEdge) && e.cancelable) {
              e.preventDefault();
-          }
-          // Prevent browser back if specific conditions met (optional)
-          else if (e.cancelable) {
-             // Let Itinerary Carousel handle it, or prevent defaults
           }
           return;
         }
 
+        // 垂直滑動模式 (下拉更新)
         if (gesture.mode === 'v') {
           const scroller = scrollContainer.value;
           const isTop = scroller ? scroller.scrollTop <= 0 : true;
@@ -803,6 +799,7 @@ createApp({
           return;
         }
 
+        // 處理下拉更新
         if (pullDistance.value > 60) {
           pullDistance.value = 60;
           isPullRefreshing.value = true;
@@ -812,22 +809,22 @@ createApp({
           pullDistance.value = 0;
         }
 
-        // Horizontal Swipes
+        // 處理水平滑動 (切換分頁)
         if (gesture.mode === 'h') {
            const absX = Math.abs(gesture.dx);
+           // 滑動距離超過 60px 才觸發
            if (absX > 60) {
-             // 1. Tab Switching (Edge Swipes)
+             // 1. 從左側邊緣 (15%) 向右滑 -> 往左邊的分頁切換
              if (gesture.startedAtLeftEdge && gesture.dx > 0) {
-                // Left edge -> Swipe Right -> Prev Tab
                 if (tab.value === 'expense') tab.value = 'itinerary';
                 else if (tab.value === 'analysis') tab.value = 'expense';
              }
+             // 2. 從右側邊緣 (15%) 向左滑 -> 往右邊的分頁切換
              else if (gesture.startedAtRightEdge && gesture.dx < 0) {
-                // Right edge -> Swipe Left -> Next Tab
                 if (tab.value === 'itinerary') tab.value = 'expense';
                 else if (tab.value === 'expense') changeTabToAnalysis();
              }
-             // 2. Date Switching (Only in Itinerary, non-edge)
+             // 3. 非邊緣滑動 (僅在行程頁面切換日期)
              else if (tab.value === 'itinerary' && !gesture.startedAtLeftEdge && !gesture.startedAtRightEdge) {
                 if (gesture.dx < 0) switchDay('next');
                 else switchDay('prev');
@@ -843,7 +840,7 @@ createApp({
       attachGestureListeners._handlers = { onTouchStart, onTouchMove, onTouchEnd };
 
       el.addEventListener('touchstart', onTouchStart, { passive: true });
-      el.addEventListener('touchmove',  onTouchMove,  { passive: false });
+      el.addEventListener('touchmove',  onTouchMove,  { passive: false }); // passive: false 才能 preventDefault
       el.addEventListener('touchend',   onTouchEnd,   { passive: true });
       el.addEventListener('touchcancel',onTouchEnd,   { passive: true });
     };
