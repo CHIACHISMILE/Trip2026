@@ -192,7 +192,7 @@
     }
     @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-    /* Pending / Sync Styles - Modified */
+    /* Pending / Sync Styles */
     .pending-sync { opacity: 0.85; border: 2px dashed #f59e0b !important; position: relative; }
     .pending-badge { display: none; }
 
@@ -204,13 +204,20 @@
     .tag-shop { background:#fdf2f8; color:#be185d; border:1px solid #fce7f3; }
     .tag-other { background:#f1f5f9; color:#334155; border:1px solid #e2e8f0; }
 
+    /* Filter Chips */
+    .filter-chip {
+        display: inline-flex; align-items: center; gap: 4px;
+        background: white; border: 1px solid #bae6fd;
+        color: #0284c7; padding: 4px 10px;
+        border-radius: 999px; font-size: 11px; font-weight: bold;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
     /* Modal Styling */
     .modal-enter-active, .modal-leave-active { transition: opacity 0.3s ease; }
     .modal-enter-from, .modal-leave-to { opacity: 0; }
     .modal-enter-active .modal-content, .modal-leave-active .modal-content { transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
     .modal-enter-from .modal-content, .modal-leave-to .modal-content { transform: scale(0.9) translateY(20px); }
-    
-    .filter-btn-active { background: #e0f2fe; color: #0284c7; border-color: #38bdf8; }
   </style>
 </head>
 
@@ -396,23 +403,22 @@
 
       <div v-else-if="tab==='analysis'" key="analysis">
         <div class="flex justify-between items-center mb-3 swipe-protected">
-          <button @click="showFilterModal=true" 
-                  class="text-xs text-sky-600 bg-sky-50 border border-sky-100 px-4 py-2 rounded-full flex items-center gap-1 shadow-sm font-bold">
-            <span class="text-lg leading-none">⑆</span> 篩選
+          <button @click="showFilterModal=true"
+                  class="text-xs text-sky-600 bg-sky-50 border border-sky-200 px-4 py-2 rounded-full flex items-center shadow-sm font-bold gap-1">
+            <span>篩選
           </button>
+          
           <button @click="openRateModal"
                   class="text-xs text-slate-500 bg-white/50 border border-white px-4 py-2 rounded-full flex items-center shadow-sm backdrop-blur-sm font-bold">
             匯率設定
           </button>
         </div>
 
-        <div v-if="activeFilterTags.length > 0" class="flex flex-wrap gap-2 mb-4">
-          <div v-for="(tag, idx) in activeFilterTags" :key="idx" 
-               class="bg-white border border-sky-100 text-sky-700 text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-2 shadow-sm">
-            {{ tag.label }}
-            <button @click="removeFilter(tag.key)" class="text-sky-300 hover:text-sky-500 font-black">✕</button>
-          </div>
-          <button @click="resetFilters" class="text-[10px] text-slate-400 underline decoration-dashed">清除全部</button>
+        <div v-if="activeFilters.length > 0" class="flex flex-wrap gap-2 mb-4 animate-pulse-once">
+            <button v-for="(f, i) in activeFilters" :key="i" @click="removeFilter(f.key)" class="filter-chip">
+                {{ f.label }}: {{ f.value }} <span>✕</span>
+            </button>
+            <button @click="resetFilters" class="text-[10px] font-bold text-slate-400 underline p-1">重置</button>
         </div>
 
         <div class="bg-gradient-to-br from-[#3b82f6] to-[#6366f1] text-white rounded-3xl p-6 shadow-xl mb-6 relative overflow-hidden ring-1 ring-white/20">
@@ -446,7 +452,7 @@
         </div>
 
         <div class="flex justify-between items-center mb-4 swipe-protected">
-          <h3 class="font-bold text-slate-700 text-lg">消費明細</h3>
+          <h3 class="font-bold text-slate-700 text-lg">消費明細 ({{ filteredExpenses.length }})</h3>
         </div>
 
         <div class="glass-card p-4 mb-6">
@@ -499,7 +505,7 @@
         </div>
 
         <div class="glass-card p-6 mb-8">
-          <h3 class="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center">分帳結算</h3>
+          <h3 class="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center">分帳結算 (基於目前篩選)</h3>
           <div v-for="d in debts" :key="d.from + '_' + d.to"
                class="flex justify-between items-center py-3 text-sm border-b border-slate-50 last:border-0">
             <span class="flex items-center gap-2">
@@ -509,7 +515,7 @@
             </span>
             <span class="font-bold text-slate-800 font-mono text-base">{{ formatNumber(d.amount) }}</span>
           </div>
-          <div v-if="debts.length===0" class="text-center text-slate-400 text-xs py-2">目前大家都付得剛剛好，沒有欠款！</div>
+          <div v-if="debts.length===0" class="text-center text-slate-400 text-xs py-2">目前篩選範圍內沒有欠款！</div>
         </div>
       </div>
     </Transition>
@@ -561,9 +567,9 @@
             <textarea v-model="itinForm.note" rows="3" class="w-full glass-input p-3 rounded-xl mt-1 outline-none text-sm" placeholder="備註事項..."></textarea>
           </div>
         </div>
-        <div class="p-4 bg-slate-50 border-t flex gap-2">
+        <div class="p-4 bg-slate-50 border-t flex gap-3">
+          <button @click="showItinModal=false" class="flex-1 bg-slate-100 text-slate-500 py-3 rounded-xl font-bold">取消</button>
           <button @click="submitItin" class="flex-1 btn-glacier py-3 rounded-xl font-bold shadow-lg">儲存行程</button>
-          <button @click="showItinModal=false" class="px-6 bg-slate-200 text-slate-500 rounded-xl font-bold">取消</button>
         </div>
       </div>
     </div>
@@ -634,62 +640,52 @@
   <Transition name="modal">
     <div v-if="showFilterModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 swipe-protected">
       <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" @click="showFilterModal=false"></div>
-      <div class="modal-content w-full max-w-sm bg-white rounded-3xl shadow-2xl relative z-10 p-6 space-y-5 max-h-[85vh] overflow-y-auto">
-        <h3 class="font-bold text-slate-800 text-lg border-b pb-2">進階篩選</h3>
+      <div class="modal-content w-full max-w-sm bg-white rounded-3xl shadow-2xl relative z-10 p-6 space-y-4">
+        <h3 class="font-bold text-slate-800 text-lg">進階篩選</h3>
         
         <div>
-          <label class="text-xs font-bold text-slate-400 block mb-2">日期</label>
-          <select v-model="tempFilters.date" class="w-full glass-input p-2 rounded-lg text-sm font-bold">
-            <option value="">全部日期</option>
-            <option v-for="d in uniqueExpDates" :key="d" :value="d">{{d}}</option>
-          </select>
+            <label class="text-[10px] font-bold text-slate-400 uppercase">日期</label>
+            <select v-model="filterForm.date" class="w-full glass-input p-3 rounded-xl text-sm font-bold mt-1">
+                <option value="ALL">全部日期</option>
+                <option v-for="d in uniqueExpDates" :key="d" :value="d">{{d}}</option>
+            </select>
         </div>
 
-        <div>
-          <label class="text-xs font-bold text-slate-400 block mb-2">付款人</label>
-          <div class="flex flex-wrap gap-2">
-            <button v-for="p in ['家齊','亭穎','媽媽']" :key="p" @click="tempFilters.payer = tempFilters.payer===p ? '' : p"
-                    :class="['px-3 py-1.5 rounded-lg text-xs font-bold border transition', tempFilters.payer===p ? 'filter-btn-active' : 'bg-white border-slate-200 text-slate-500']">
-              {{p}}
-            </button>
-          </div>
+        <div class="flex gap-3">
+            <div class="w-1/2">
+                <label class="text-[10px] font-bold text-slate-400 uppercase">付款人</label>
+                <select v-model="filterForm.payer" class="w-full glass-input p-3 rounded-xl text-sm font-bold mt-1">
+                    <option value="ALL">全部</option>
+                    <option v-for="p in uniqueOptions.payers" :key="p" :value="p">{{p}}</option>
+                </select>
+            </div>
+            <div class="w-1/2">
+                <label class="text-[10px] font-bold text-slate-400 uppercase">消費地點</label>
+                <select v-model="filterForm.location" class="w-full glass-input p-3 rounded-xl text-sm font-bold mt-1">
+                    <option value="ALL">全部</option>
+                    <option v-for="l in uniqueOptions.locations" :key="l" :value="l">{{l}}</option>
+                </select>
+            </div>
         </div>
 
-        <div>
-          <label class="text-xs font-bold text-slate-400 block mb-2">地點</label>
-          <div class="flex flex-wrap gap-2">
-            <button v-for="l in ['台灣','杜拜','挪威','冰島','英國']" :key="l" @click="tempFilters.location = tempFilters.location===l ? '' : l"
-                    :class="['px-3 py-1.5 rounded-lg text-xs font-bold border transition', tempFilters.location===l ? 'filter-btn-active' : 'bg-white border-slate-200 text-slate-500']">
-              {{l}}
-            </button>
-          </div>
+        <div class="flex gap-3">
+            <div class="w-1/2">
+                <label class="text-[10px] font-bold text-slate-400 uppercase">消費類別</label>
+                <select v-model="filterForm.category" class="w-full glass-input p-3 rounded-xl text-sm font-bold mt-1">
+                    <option value="ALL">全部</option>
+                    <option v-for="c in uniqueOptions.items" :key="c" :value="c">{{c}}</option>
+                </select>
+            </div>
+            <div class="w-1/2">
+                <label class="text-[10px] font-bold text-slate-400 uppercase">付款方式</label>
+                <select v-model="filterForm.payment" class="w-full glass-input p-3 rounded-xl text-sm font-bold mt-1">
+                    <option value="ALL">全部</option>
+                    <option v-for="p in uniqueOptions.payments" :key="p" :value="p">{{p}}</option>
+                </select>
+            </div>
         </div>
 
-        <div>
-          <label class="text-xs font-bold text-slate-400 block mb-2">消費項目</label>
-          <div class="flex flex-wrap gap-2">
-            <button v-for="i in ['早餐','午餐','晚餐','零食','住宿','交通（機票）','交通（租車）','交通（停車費）','交通（油錢）','紀念品','門票','其他']" 
-                    :key="i" @click="tempFilters.item = tempFilters.item===i ? '' : i"
-                    :class="['px-3 py-1.5 rounded-lg text-xs font-bold border transition', tempFilters.item===i ? 'filter-btn-active' : 'bg-white border-slate-200 text-slate-500']">
-              {{i}}
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <label class="text-xs font-bold text-slate-400 block mb-2">付款方式</label>
-          <div class="flex flex-wrap gap-2">
-            <button v-for="pay in ['現金','信用卡-國泰','信用卡-永豐','信用卡-元大']" :key="pay" @click="tempFilters.payment = tempFilters.payment===pay ? '' : pay"
-                    :class="['px-3 py-1.5 rounded-lg text-xs font-bold border transition', tempFilters.payment===pay ? 'filter-btn-active' : 'bg-white border-slate-200 text-slate-500']">
-              {{pay}}
-            </button>
-          </div>
-        </div>
-
-        <div class="pt-2 flex gap-2">
-          <button @click="applyFilters" class="flex-1 btn-glacier py-3 rounded-xl font-bold">套用篩選</button>
-          <button @click="clearTempFilters" class="px-4 bg-slate-100 text-slate-500 rounded-xl font-bold">重置</button>
-        </div>
+        <button @click="showFilterModal=false" class="w-full btn-glacier mt-4 py-3 rounded-xl font-bold">套用篩選</button>
       </div>
     </div>
   </Transition>
@@ -714,6 +710,9 @@
 
 <script>
 const YOUR_GAS_URL = 'https://script.google.com/macros/s/AKfycbz6PZtqLJzlS2a71R-RfZjpJCuqJVPoP7RuNxEe74mS_uvxBejMNGKboFSn2ArNnXAu/exec';
+
+// Register Plugin
+Chart.register(ChartDataLabels);
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -742,9 +741,6 @@ async function callApi(action, data = null, method = 'GET') {
   }
 }
 
-// 註冊 Chart DataLabels
-Chart.register(ChartDataLabels);
-
 const { createApp, ref, computed, onMounted, nextTick, watch, onBeforeUnmount } = Vue;
 
 createApp({
@@ -755,7 +751,10 @@ createApp({
     const isPullRefreshing = ref(false);
     const isOnline = ref(navigator.onLine);
     
+    // Status Flags
     const isSyncing = ref(false);
+
+    // Sync Queue
     const syncQueue = ref([]);
     
     const members = ref([]);
@@ -799,10 +798,9 @@ createApp({
     }
     const selDate = ref(tripDates[0].date);
     
-    // Filters Logic
+    // Filter State
     const showFilterModal = ref(false);
-    const activeFilters = ref({});
-    const tempFilters = ref({ date: '', payer: '', location: '', item: '', payment: '' });
+    const filterForm = ref({ date: 'ALL', payer: 'ALL', location: 'ALL', category: 'ALL', payment: 'ALL' });
 
     const showRateModal = ref(false);
     const showItinModal = ref(false);
@@ -825,7 +823,7 @@ createApp({
       todayWeekday.value = days[now.getDay()];
     };
 
-    /* iOS Gesture Engine */
+    /* iOS Gesture Engine (15% Logic) */
     const gesture = {
       active:false, mode:null,
       startX:0, startY:0, dx:0, dy:0,
@@ -1154,50 +1152,46 @@ createApp({
     const getEvents = (d) => itinerary.value.filter(e => e.date === d).sort((a,b)=>a.startTime.localeCompare(b.startTime));
     const formatNumber = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
+    /* --- Advanced Filter Logic --- */
     const uniqueExpDates = computed(() => [...new Set(expenses.value.map(e => e.date))].sort());
     
-    // Filtered Expenses Logic
-    const filteredExpenses = computed(() => {
-      return expenses.value.filter(exp => {
-        const f = activeFilters.value;
-        if (f.date && exp.date !== f.date) return false;
-        if (f.payer && exp.payer !== f.payer) return false;
-        if (f.location && exp.location !== f.location) return false;
-        if (f.item && exp.item !== f.item) return false;
-        if (f.payment && exp.payment !== f.payment) return false;
-        return true;
-      });
+    const uniqueOptions = computed(() => {
+        return {
+            payers: [...new Set(expenses.value.map(e => e.payer).filter(Boolean))],
+            locations: [...new Set(expenses.value.map(e => e.location).filter(Boolean))],
+            items: [...new Set(expenses.value.map(e => e.item).filter(Boolean))],
+            payments: [...new Set(expenses.value.map(e => e.payment).filter(Boolean))]
+        };
     });
 
-    const activeFilterTags = computed(() => {
-      const tags = [];
-      const f = activeFilters.value;
-      if (f.date) tags.push({ key: 'date', label: f.date });
-      if (f.payer) tags.push({ key: 'payer', label: f.payer });
-      if (f.location) tags.push({ key: 'location', label: f.location });
-      if (f.item) tags.push({ key: 'item', label: f.item });
-      if (f.payment) tags.push({ key: 'payment', label: f.payment });
-      return tags;
+    const activeFilters = computed(() => {
+        const chips = [];
+        if (filterForm.value.date !== 'ALL') chips.push({ key: 'date', value: filterForm.value.date, label: '日期' });
+        if (filterForm.value.payer !== 'ALL') chips.push({ key: 'payer', value: filterForm.value.payer, label: '付款人' });
+        if (filterForm.value.location !== 'ALL') chips.push({ key: 'location', value: filterForm.value.location, label: '地點' });
+        if (filterForm.value.category !== 'ALL') chips.push({ key: 'category', value: filterForm.value.category, label: '類別' });
+        if (filterForm.value.payment !== 'ALL') chips.push({ key: 'payment', value: filterForm.value.payment, label: '付款' });
+        return chips;
     });
 
-    const applyFilters = () => {
-      activeFilters.value = { ...tempFilters.value };
-      showFilterModal.value = false;
-    };
-
-    const clearTempFilters = () => {
-      tempFilters.value = { date: '', payer: '', location: '', item: '', payment: '' };
+    const removeFilter = (key) => {
+        filterForm.value[key] = 'ALL';
     };
 
     const resetFilters = () => {
-      activeFilters.value = {};
-      clearTempFilters();
+        filterForm.value = { date: 'ALL', payer: 'ALL', location: 'ALL', category: 'ALL', payment: 'ALL' };
     };
 
-    const removeFilter = (key) => {
-      activeFilters.value[key] = '';
-      tempFilters.value[key] = '';
-    };
+    const filteredExpenses = computed(() => {
+        return expenses.value.filter(e => {
+            if (filterForm.value.date !== 'ALL' && e.date !== filterForm.value.date) return false;
+            if (filterForm.value.payer !== 'ALL' && e.payer !== filterForm.value.payer) return false;
+            if (filterForm.value.location !== 'ALL' && e.location !== filterForm.value.location) return false;
+            if (filterForm.value.category !== 'ALL' && e.item !== filterForm.value.category) return false;
+            if (filterForm.value.payment !== 'ALL' && e.payment !== filterForm.value.payment) return false;
+            return true;
+        });
+    });
 
     const getAmountTWD = (exp) => {
       if (exp.amountTWD && exp.amountTWD > 0) return exp.amountTWD;
@@ -1205,7 +1199,7 @@ createApp({
     };
 
     const publicSpent = computed(() => {
-      return expenses.value.reduce((sum, e) => {
+      return filteredExpenses.value.reduce((sum, e) => {
         const amt = getAmountTWD(e);
         if (!e.involved || e.involved.length === 0) return sum;
         const perShare = amt / e.involved.length;
@@ -1217,7 +1211,7 @@ createApp({
     });
 
     const momSpent = computed(() => {
-      return expenses.value.reduce((sum, e) => {
+      return filteredExpenses.value.reduce((sum, e) => {
         const amt = getAmountTWD(e);
         if (e.involved && e.involved.includes('媽媽')) return sum + (amt / e.involved.length);
         return sum;
@@ -1227,7 +1221,9 @@ createApp({
     const debts = computed(() => {
       if (members.value.length === 0) return [];
       const bal = {}; members.value.forEach(m => bal[m] = 0);
-      expenses.value.forEach(e => {
+      
+      // Calculate debts based on FILTERED expenses
+      filteredExpenses.value.forEach(e => {
         const amt = getAmountTWD(e);
         const split = e.involved || [];
         if (split.length > 0) {
@@ -1290,7 +1286,6 @@ createApp({
       const stats = buildStats();
       const labels = Object.keys(stats);
       const data = Object.values(stats);
-      const total = data.reduce((a, b) => a + b, 0);
 
       const nordicColors = ['#38bdf8', '#818cf8', '#c084fc', '#f472b6', '#fb7185', '#22d3ee', '#34d399', '#a78bfa', '#fbcfe8', '#e2e8f0'];
 
@@ -1306,7 +1301,7 @@ createApp({
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '60%',
+            cutout: '50%',
             animation: { duration: 800 },
             plugins: {
               legend: {
@@ -1320,18 +1315,21 @@ createApp({
                 }
               },
               datalabels: {
-                color: '#fff',
+                color: '#1e3a8a',
                 font: { weight: 'bold', size: 10 },
                 formatter: (value, ctx) => {
-                  if (total === 0) return '';
-                  let percentage = (value * 100 / total).toFixed(1) + "%";
-                  // 只顯示佔比大於 5% 的標籤以避免重疊
-                  if (value * 100 / total < 5) return '';
-                  return percentage + '\n$' + formatNumber(value);
+                    let sum = 0;
+                    let dataArr = ctx.chart.data.datasets[0].data;
+                    dataArr.map(data => { sum += data; });
+                    if(sum === 0) return '';
+                    let percentage = (value*100 / sum).toFixed(1)+"%";
+                    // Only show if segment is big enough to hold text
+                    if ((value/sum) < 0.05) return '';
+                    return formatNumber(value) + '\n' + percentage;
                 },
-                textAlign: 'center',
-                textShadowBlur: 2,
-                textShadowColor: 'rgba(0,0,0,0.3)'
+                anchor: 'center',
+                align: 'center',
+                textAlign: 'center'
               }
             }
           }
@@ -1361,9 +1359,7 @@ createApp({
       scheduleRenderChart();
     };
 
-    // Watchers for Filter and Analysis Tab
-    watch([tab, activeFilters], () => { if (tab.value === 'analysis') scheduleRenderChart(); }, { deep: true });
-    watch(expenses, () => { if (tab.value === 'analysis') scheduleRenderChart(); }, { deep: true });
+    watch([tab, filteredExpenses], () => { if (tab.value === 'analysis') scheduleRenderChart(); });
 
     const openRateModal = () => { tempRates.value = { ...rates.value }; showRateModal.value = true; };
     const openAddItin = () => { itinForm.value = { row: null, startTime: '09:00', endTime: '', category: '景點', title: '', location: '', link: '', note: '' }; isEditing.value = false; showItinModal.value = true; };
@@ -1491,6 +1487,7 @@ createApp({
       attachGestureListeners();
       loadData();
       
+      // Try processing queue on load if online
       if(navigator.onLine) processSyncQueue();
     });
 
@@ -1514,12 +1511,12 @@ createApp({
       getItemTagClass,
       chartBusy,
       changeTabToAnalysis,
-      showRateModal, showItinModal, showExpModal, showFilterModal, isEditing,
-      itinForm, newExp, editExpForm, tempRates, tempFilters, activeFilters, activeFilterTags,
+      showRateModal, showItinModal, showExpModal, isEditing,
+      itinForm, newExp, editExpForm, tempRates,
+      showFilterModal, filterForm, uniqueOptions, activeFilters, removeFilter, resetFilters,
       openRateModal, openAddItin, openEditItin, openEditExp,
       deleteItin, deleteExp, submitItin, submitExp, submitEditExp, saveRates, 
-      confirmClearSync, toggleSelectAll, toggleSelectAllEdit, isItemPending,
-      applyFilters, resetFilters, clearTempFilters, removeFilter
+      confirmClearSync, toggleSelectAll, toggleSelectAllEdit, isItemPending
     };
   }
 }).mount('#app');
