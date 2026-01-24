@@ -1,4 +1,4 @@
-const CACHE_NAME = '2026-trip-app-v1.13'; // 若有大改版，改這個版本號 (例如 v2) 使用者就會重新下載
+const CACHE_NAME = '2026-trip-app-v1.15'; // 若有大改版，改這個版本號 (例如 v2) 使用者就會重新下載
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
