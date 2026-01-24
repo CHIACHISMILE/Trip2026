@@ -20,6 +20,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
+    /* CSS Setup */
     html, body {
       height: 100dvh;
       width: 100%;
@@ -190,7 +191,21 @@
     }
     @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-    .pending-sync { opacity: 0.7; border: 1px dashed #f59e0b; }
+    /* Pending / Sync Styles */
+    .pending-sync { opacity: 0.8; border: 1px dashed #f59e0b; position: relative; }
+    .pending-sync::after {
+      content: '待上傳';
+      position: absolute;
+      top: -6px; right: -6px;
+      background: #f59e0b;
+      color: white;
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 99px;
+      font-weight: 800;
+      box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+      z-index: 5;
+    }
     .pending-badge { background: #f59e0b; color: white; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 5px; }
 
     .tag { display:inline-flex; align-items:center; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
@@ -223,11 +238,17 @@
     <div class="flex justify-between items-center">
       <h1 class="text-xl font-black tracking-tighter text-slate-800 drop-shadow-sm">2026 挪威冰島之旅</h1>
       <div class="text-right">
-        <button v-if="syncQueue.length > 0" @click="forceClearSync"
+        <button v-if="isSyncing"
+                class="bg-emerald-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-1 mb-1 ml-auto animate-pulse">
+           <span class="w-2 h-2 bg-white rounded-full animate-ping"></span>
+           同步中...
+        </button>
+        <button v-else-if="syncQueue.length > 0" @click="confirmClearSync"
                 class="bg-amber-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg animate-pulse flex items-center gap-1 mb-1 ml-auto">
           待上傳 ({{ syncQueue.length }})
         </button>
-        <div class="text-lg font-black text-sky-900 leading-none tracking-wide font-mono">{{ todayDate }}</div>
+        
+        <div class="text-lg font-black text-sky-900 leading-none tracking-wide font-mono mt-1">{{ todayDate }}</div>
         <div class="text-[10px] text-sky-600 font-bold opacity-80 mt-1 uppercase tracking-[0.2em]">{{ todayWeekday }}</div>
       </div>
     </div>
@@ -235,7 +256,7 @@
       <div class="glass-input px-3 py-1.5 rounded-full text-[10px] font-bold text-slate-500 tracking-wide">AUG 30 - SEP 26</div>
       <div class="flex gap-2">
         <span v-if="!isOnline" class="bg-slate-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md flex items-center gap-1">離線</span>
-        <span v-if="tripStatus" class="bg-gradient-to-r from-sky-400 to-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md">{{ tripStatus }}</span>
+        <span v-else class="bg-gradient-to-r from-sky-400 to-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md">{{ tripStatus }}</span>
       </div>
     </div>
   </div>
@@ -248,6 +269,7 @@
 
   <div class="scrollable-content p-4" ref="scrollContainer">
     <Transition name="fade" mode="out-in">
+      
       <div v-if="tab==='itinerary'" key="itinerary">
         <div ref="dateContainer" class="overflow-x-auto whitespace-nowrap pb-4 px-1 scrollbar-hide scroll-smooth swipe-protected">
           <button v-for="d in tripDates" :key="d.date" :id="'date-btn-' + d.date" @click="selectDate(d.date)"
@@ -272,7 +294,7 @@
           </div>
 
           <div v-for="evt in getEvents(selDate)" :key="evt.row"
-               :class="['glass-card flex mb-4 items-stretch overflow-hidden group', evt.isPending ? 'pending-sync' : '', getCategoryClass(evt.category)]">
+               :class="['glass-card flex mb-4 items-stretch overflow-hidden group', isItemPending(evt.row) ? 'pending-sync' : '', getCategoryClass(evt.category)]">
             <div class="w-16 flex flex-col justify-center items-center p-2 bg-slate-50/50 border-r border-slate-100 flex-shrink-0 swipe-protected">
               <div class="font-black text-sm text-slate-700">{{ evt.startTime }}</div>
               <div v-if="evt.endTime" class="text-[10px] text-slate-400 mt-1 font-medium">{{ evt.endTime }}</div>
@@ -439,13 +461,12 @@
 
         <div class="space-y-3 mb-8">
           <div v-for="exp in filteredExpenses" :key="exp.row"
-               :class="['glass-card p-4 transition hover:shadow-md border-l-4 border-l-sky-400', exp.isPending ? 'pending-sync' : '']">
+               :class="['glass-card p-4 transition hover:shadow-md border-l-4 border-l-sky-400', isItemPending(exp.row) ? 'pending-sync' : '']">
             <div class="flex justify-between items-start gap-4">
               <div class="min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
                   <span :class="['tag', getItemTagClass(exp.item)]">{{ exp.item }}</span>
                   <span class="text-[10px] text-slate-400 font-mono font-bold uppercase">{{ exp.date }} · {{ exp.time }}</span>
-                  <span v-if="exp.isPending" class="pending-badge">待傳</span>
                 </div>
 
                 <div class="mt-2 font-bold text-slate-800 text-base break-anywhere allow-select" @click.stop>
@@ -454,6 +475,9 @@
 
                 <div class="text-xs text-slate-500 mt-2 flex items-center flex-wrap gap-2">
                   <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-bold">{{ exp.payer }}</span>
+                  <span v-if="exp.involved && exp.involved.length > 0" class="bg-orange-50 px-2 py-0.5 rounded text-orange-700 font-bold border border-orange-100 flex items-center gap-1">
+                      <span class="text-[9px] opacity-60">分</span>{{ exp.involved.join('、') }}
+                  </span>
                   <span class="text-sky-600 font-bold bg-sky-50 px-2 py-0.5 rounded">{{ exp.payment }}</span>
                   <span class="text-slate-400 font-medium">{{ exp.location }}</span>
                 </div>
@@ -513,9 +537,9 @@
           </div>
           <div>
             <label class="text-[10px] font-bold text-slate-400 uppercase">類別</label>
-            <div class="flex gap-2 mt-1">
-              <button v-for="c in ['景點','飲食','交通','住宿']" :key="c" @click="itinForm.category=c"
-                      :class="['flex-1 py-2 rounded-xl text-xs font-bold border transition',
+            <div class="flex gap-2 mt-1 flex-wrap">
+              <button v-for="c in ['景點','飲食','交通','住宿','其他']" :key="c" @click="itinForm.category=c"
+                      :class="['flex-1 min-w-[3rem] py-2 rounded-xl text-xs font-bold border transition',
                                itinForm.category===c ? 'bg-sky-500 text-white border-sky-500 shadow-md' : 'bg-white text-slate-500 border-slate-200']">
                 {{c}}
               </button>
@@ -604,13 +628,12 @@ async function callApi(action, data = null, method = 'GET') {
   try {
     const response = await fetch(url, options);
     const ct = response.headers.get("content-type");
-    if (ct && ct.indexOf("application/json") === -1) throw new Error("Server HTML Error");
+    if (ct && ct.indexOf("application/json") === -1) throw new Error("Server Response Not JSON");
     if (!response.ok) throw new Error("Network error");
     return await response.json();
   } catch(e) {
-    console.error(e);
-    // If offline or error, we still allow UI to work optimistically
-    return null;
+    console.warn("API Fail:", e);
+    return null; 
   }
 }
 
@@ -623,8 +646,13 @@ createApp({
     const isFirstLoad = ref(true);
     const isPullRefreshing = ref(false);
     const isOnline = ref(navigator.onLine);
+    
+    // Status Flags
+    const isSyncing = ref(false);
 
+    // Sync Queue
     const syncQueue = ref([]);
+    
     const members = ref([]);
     const expenses = ref([]);
     const itinerary = ref([]);
@@ -650,7 +678,7 @@ createApp({
       now.setHours(0,0,0,0); start.setHours(0,0,0,0); end.setHours(0,0,0,0);
       if (now < start) return `倒數 ${Math.ceil((start - now)/86400000)} 天`;
       if (now >= start && now <= end) return '旅程中';
-      return '回味無窮';
+      return '';
     });
 
     const tripDates = [];
@@ -682,7 +710,7 @@ createApp({
       todayWeekday.value = days[now.getDay()];
     };
 
-    /* iOS Gesture Engine with Edge Swipe */
+    /* iOS Gesture Engine (15% Logic) */
     const gesture = {
       active:false, mode:null,
       startX:0, startY:0, dx:0, dy:0,
@@ -712,7 +740,6 @@ createApp({
       }
     };
 
-/* iOS Gesture Engine - Modified for 15% Edge Swipe */
     const attachGestureListeners = () => {
       const el = scrollContainer.value;
       if (!el) return;
@@ -726,13 +753,12 @@ createApp({
         gesture.startX = t.clientX;
         gesture.startY = t.clientY;
         
-        // --- 修改點開始：計算 15% 寬度 ---
+        // 15% Edge Logic
         const w = window.innerWidth;
-        const edgeThreshold = w * 0.15; // 畫面寬度的 15%
+        const edgeThreshold = w * 0.15;
         
         gesture.startedAtLeftEdge = (gesture.startX <= edgeThreshold);
         gesture.startedAtRightEdge = (gesture.startX >= w - edgeThreshold);
-        // --- 修改點結束 ---
 
         gesture.inSelectable = !!e.target.closest('.allow-select');
         gesture.selectIntent = false;
@@ -768,16 +794,13 @@ createApp({
           gesture.mode = (absX > absY) ? 'h' : 'v';
         }
 
-        // 水平滑動模式
         if (gesture.mode === 'h') {
-          // 如果是從邊緣開始滑動，阻止瀏覽器預設的上一頁/下一頁行為
           if ((gesture.startedAtLeftEdge || gesture.startedAtRightEdge) && e.cancelable) {
              e.preventDefault();
           }
           return;
         }
 
-        // 垂直滑動模式 (下拉更新)
         if (gesture.mode === 'v') {
           const scroller = scrollContainer.value;
           const isTop = scroller ? scroller.scrollTop <= 0 : true;
@@ -799,7 +822,6 @@ createApp({
           return;
         }
 
-        // 處理下拉更新
         if (pullDistance.value > 60) {
           pullDistance.value = 60;
           isPullRefreshing.value = true;
@@ -809,22 +831,17 @@ createApp({
           pullDistance.value = 0;
         }
 
-        // 處理水平滑動 (切換分頁)
         if (gesture.mode === 'h') {
            const absX = Math.abs(gesture.dx);
-           // 滑動距離超過 60px 才觸發
            if (absX > 60) {
-             // 1. 從左側邊緣 (15%) 向右滑 -> 往左邊的分頁切換
              if (gesture.startedAtLeftEdge && gesture.dx > 0) {
                 if (tab.value === 'expense') tab.value = 'itinerary';
                 else if (tab.value === 'analysis') tab.value = 'expense';
              }
-             // 2. 從右側邊緣 (15%) 向左滑 -> 往右邊的分頁切換
              else if (gesture.startedAtRightEdge && gesture.dx < 0) {
                 if (tab.value === 'itinerary') tab.value = 'expense';
                 else if (tab.value === 'expense') changeTabToAnalysis();
              }
-             // 3. 非邊緣滑動 (僅在行程頁面切換日期)
              else if (tab.value === 'itinerary' && !gesture.startedAtLeftEdge && !gesture.startedAtRightEdge) {
                 if (gesture.dx < 0) switchDay('next');
                 else switchDay('prev');
@@ -840,7 +857,7 @@ createApp({
       attachGestureListeners._handlers = { onTouchStart, onTouchMove, onTouchEnd };
 
       el.addEventListener('touchstart', onTouchStart, { passive: true });
-      el.addEventListener('touchmove',  onTouchMove,  { passive: false }); // passive: false 才能 preventDefault
+      el.addEventListener('touchmove',  onTouchMove,  { passive: false });
       el.addEventListener('touchend',   onTouchEnd,   { passive: true });
       el.addEventListener('touchcancel',onTouchEnd,   { passive: true });
     };
@@ -858,7 +875,6 @@ createApp({
 
     const saveLocal = (data) => {
       try {
-        // Update entire cache with current refs
         const toSave = {
            expenses: expenses.value,
            itinerary: itinerary.value,
@@ -883,6 +899,62 @@ createApp({
         return true;
       }
       return false;
+    };
+
+    // ==========================================
+    // Core Sync Logic with Instant Feedback
+    // ==========================================
+    
+    // Process queue when online (Background Sync)
+    const processSyncQueue = async () => {
+      if (syncQueue.value.length === 0 || !navigator.onLine || isSyncing.value) return;
+      
+      isSyncing.value = true;
+      const queue = [...syncQueue.value];
+      const remaining = [];
+
+      for (const job of queue) {
+        try {
+          const apiAction = job.action + (job.type === 'itin' ? 'Itin' : 'Exp');
+          const res = await callApi(apiAction, job.data, 'POST');
+          
+          if (!res) {
+            remaining.push(job);
+          }
+        } catch (e) {
+          remaining.push(job);
+        }
+      }
+
+      syncQueue.value = remaining;
+      saveLocal({});
+      isSyncing.value = false;
+      
+      if (syncQueue.value.length === 0) loadData();
+    };
+
+    // Immediate Action Handler
+    const handleCRUD = async (type, action, data) => {
+       // 1. Try Online Sync Immediately
+       if (navigator.onLine) {
+         isSyncing.value = true; // SHOW "同步中..."
+         try {
+           const apiAction = action + (type === 'itin' ? 'Itin' : 'Exp');
+           const res = await callApi(apiAction, data, 'POST');
+           if (!res) throw new Error("API Fail");
+           
+           // Success: isSyncing will be set to false in finally
+         } catch (e) {
+           // Fail: Push to queue, SHOW "待上傳"
+           syncQueue.value.push({ type, action, data });
+         } finally {
+           isSyncing.value = false; // HIDE "同步中..."
+         }
+       } else {
+         // Offline: Push to queue directly
+         syncQueue.value.push({ type, action, data });
+       }
+       saveLocal({});
     };
 
     const loadData = async () => {
@@ -959,7 +1031,7 @@ createApp({
         case '住宿': return 'cat-stay';
         case '景點': return 'cat-spot';
         case '飲食': return 'cat-food';
-        default: return 'cat-note';
+        default: return 'cat-note'; // Covers '其他'
       }
     };
 
@@ -1037,7 +1109,7 @@ createApp({
       return 'tag-other';
     };
 
-    /* Chart Optimization */
+    /* Chart Logic */
     let chartInstance = null;
     const chartBusy = ref(false);
     let chartTimer = null;
@@ -1124,19 +1196,41 @@ createApp({
     const openEditItin = (evt) => { itinForm.value = { ...evt }; isEditing.value = true; showItinModal.value = true; };
     const openEditExp = (exp) => { editExpForm.value = JSON.parse(JSON.stringify(exp)); showExpModal.value = true; };
     
+    // ===================================
     // Actions
+    // ===================================
+
     const deleteItin = async (evt) => { 
       if(!confirm('確定刪除?')) return; 
+      
       itinerary.value = itinerary.value.filter(x => x.row !== evt.row); 
-      saveLocal({});
-      await callApi('deleteItin', evt, 'POST'); 
+      
+      const pendingIdx = syncQueue.value.findIndex(job => 
+        job.type === 'itin' && job.action === 'add' && job.data.row === evt.row
+      );
+
+      if (pendingIdx !== -1) {
+        syncQueue.value.splice(pendingIdx, 1);
+        saveLocal({});
+      } else {
+        handleCRUD('itin', 'delete', evt);
+      }
     };
 
     const deleteExp = async (exp) => { 
       if(!confirm('確定刪除?')) return; 
       expenses.value = expenses.value.filter(x => x.row !== exp.row); 
-      saveLocal({});
-      await callApi('deleteExp', exp, 'POST'); 
+      
+      const pendingIdx = syncQueue.value.findIndex(job => 
+        job.type === 'exp' && job.action === 'add' && job.data.row === exp.row
+      );
+
+      if (pendingIdx !== -1) {
+        syncQueue.value.splice(pendingIdx, 1);
+        saveLocal({});
+      } else {
+        handleCRUD('exp', 'delete', exp);
+      }
     };
 
     const submitItin = async () => {
@@ -1147,14 +1241,12 @@ createApp({
       if(isEditing.value) {
          const idx = itinerary.value.findIndex(x => x.row === newRow);
          if(idx !== -1) itinerary.value[idx] = payload;
+         handleCRUD('itin', 'edit', payload);
       } else {
          itinerary.value.push(payload);
+         handleCRUD('itin', 'add', payload);
       }
-      saveLocal({});
       showItinModal.value = false;
-      
-      const res = await callApi(isEditing.value ? 'editItin' : 'addItin', payload, 'POST');
-      if(!res) syncQueue.value.push({ type: 'itin', data: payload });
     };
 
     const submitExp = async () => {
@@ -1168,28 +1260,22 @@ createApp({
       };
       
       expenses.value.unshift(payload);
-      saveLocal({});
+      handleCRUD('exp', 'add', payload);
       
-      // Reset form (keep payer/location for convenience)
       newExp.value.amount = null; newExp.value.item = ''; newExp.value.note = ''; newExp.value.involved = [];
-      
-      const res = await callApi('addExp', payload, 'POST');
-      if(!res) syncQueue.value.push({ type: 'exp', data: payload });
-      else alert('記帳成功');
+      alert('記帳成功');
     };
 
     const submitEditExp = async () => {
         const idx = expenses.value.findIndex(e => e.row === editExpForm.value.row);
         if(idx === -1) return;
         
-        // Recalculate TWD
         const updated = { ...editExpForm.value };
         updated.amountTWD = Math.round(updated.amount * (rates.value[updated.currency] || 1));
         
         expenses.value[idx] = updated;
-        saveLocal({});
         showExpModal.value = false;
-        await callApi('editExp', updated, 'POST');
+        handleCRUD('exp', 'edit', updated);
     };
 
     const saveRates = () => {
@@ -1198,10 +1284,23 @@ createApp({
        showRateModal.value = false;
     };
 
-    const forceClearSync = () => { syncQueue.value = []; saveLocal({}); };
+    const confirmClearSync = () => { 
+      if(confirm('確定要強制清空所有待上傳資料嗎？\n注意：這會導致離線新增的資料無法同步到伺服器。')) {
+        syncQueue.value = []; 
+        saveLocal({});
+      }
+    };
+    
     const toggleSelectAll = () => { if(newExp.value.involved.length === members.value.length) newExp.value.involved=[]; else newExp.value.involved=[...members.value]; };
 
-    const updateOnlineStatus = () => { isOnline.value = navigator.onLine; };
+    const updateOnlineStatus = () => { 
+      isOnline.value = navigator.onLine; 
+      if (isOnline.value) processSyncQueue();
+    };
+
+    const isItemPending = (rowId) => {
+      return syncQueue.value.some(job => job.data.row === rowId);
+    };
 
     onMounted(async () => {
       initDate();
@@ -1210,6 +1309,9 @@ createApp({
       await nextTick();
       attachGestureListeners();
       loadData();
+      
+      // Try processing queue on load if online
+      if(navigator.onLine) processSyncQueue();
     });
 
     onBeforeUnmount(() => {
@@ -1220,7 +1322,7 @@ createApp({
     });
 
     return {
-      tab, isLoading, isOnline, syncQueue,
+      tab, isLoading, isOnline, isSyncing, syncQueue,
       dateContainer, scrollContainer,
       todayDate, todayWeekday,
       pullDistance, isPullRefreshing, refreshText,
@@ -1235,7 +1337,8 @@ createApp({
       showRateModal, showItinModal, showExpModal, isEditing,
       itinForm, newExp, editExpForm, tempRates,
       openRateModal, openAddItin, openEditItin, openEditExp,
-      deleteItin, deleteExp, submitItin, submitExp, submitEditExp, saveRates, forceClearSync, toggleSelectAll
+      deleteItin, deleteExp, submitItin, submitExp, submitEditExp, saveRates, 
+      confirmClearSync, toggleSelectAll, isItemPending
     };
   }
 }).mount('#app');
