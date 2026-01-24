@@ -20,6 +20,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
   <style>
+    /* 全局設定 */
     html, body {
         height: 100dvh; width: 100%; overflow: hidden; 
         font-family: 'Inter', 'Noto Sans TC', -apple-system, sans-serif; 
@@ -45,6 +46,14 @@
         padding-bottom: calc(90px + env(safe-area-inset-bottom));
     }
 
+    /* 關鍵修正：允許選取文字的區域 */
+    .allow-select { 
+        -webkit-user-select: text !important; 
+        user-select: text !important; 
+        cursor: text; 
+    }
+
+    /* 卡片與輸入框 */
     .glass-card {
         background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
         border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 20px;
@@ -148,7 +157,7 @@
           <div class="text-center mb-6">
             <div class="inline-block glass-input px-6 py-2 rounded-full text-sm font-bold text-slate-600 shadow-sm">{{ getDayInfo(selDate) }}</div>
           </div>
-          <div v-for="evt in getEvents(selDate)" :class="['glass-card flex mb-4 items-stretch overflow-hidden group', evt.isPending ? 'pending-sync' : '', getCategoryClass(evt.category)]">
+          <div v-for="evt in getEvents(selDate)" :class="['glass-card flex mb-4 items-stretch overflow-hidden', evt.isPending ? 'pending-sync' : '', getCategoryClass(evt.category)]">
             <div class="w-16 flex flex-col justify-center items-center p-2 bg-slate-50/50 border-r border-slate-100">
               <div class="font-black text-sm text-slate-700">{{ evt.startTime }}</div>
               <div v-if="evt.endTime" class="text-[10px] text-slate-400 mt-1 font-medium">{{ evt.endTime }}</div>
@@ -158,17 +167,18 @@
             </div>
             <div class="flex-1 p-4 relative">
                 <div class="flex justify-between items-start">
-                    <span v-if="!evt.link" class="font-bold text-base text-slate-800 leading-tight">{{ evt.title }}</span>
-                    <a v-else :href="evt.link" target="_blank" class="title-link text-base leading-tight">{{ evt.title }}</a>
+                    <span v-if="!evt.link" class="font-bold text-base text-slate-800 leading-tight allow-select">{{ evt.title }}</span>
+                    <a v-else :href="evt.link" target="_blank" class="title-link text-base leading-tight allow-select">{{ evt.title }}</a>
                 </div>
                 <div class="text-xs mt-2 text-slate-500 flex items-start gap-2" v-if="evt.location">
-                    <span class="flex-1 pt-1 opacity-80">📍 {{ evt.location }}</span>
+                    <span class="flex-1 pt-1 opacity-80 allow-select">📍 {{ evt.location }}</span>
                     <a :href="'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(evt.location)" target="_blank" class="map-btn">地圖</a>
                 </div>
-                <div class="text-sm mt-3 text-slate-600 whitespace-pre-wrap opacity-90" v-if="evt.note">{{ evt.note }}</div>
-                <div class="mt-3 flex gap-2 justify-end"> 
-                   <button @click="openEditItin(evt)" class="text-[10px] text-sky-600 bg-sky-50 border border-sky-100 px-3 py-1 rounded-lg font-bold active:bg-sky-100">編輯</button>
-                   <button @click="deleteItin(evt)" class="text-[10px] text-red-500 bg-red-50 border border-red-100 px-3 py-1 rounded-lg font-bold active:bg-red-100">刪除</button>
+                <div class="text-sm mt-3 text-slate-600 whitespace-pre-wrap opacity-90 allow-select" v-if="evt.note">{{ evt.note }}</div>
+                
+                <div class="mt-4 flex gap-2 justify-end prevent-swipe"> 
+                   <button @click.stop="openEditItin(evt)" class="text-[10px] text-sky-600 bg-sky-50 border border-sky-100 px-3 py-1.5 rounded-lg font-bold active:bg-sky-100">編輯</button>
+                   <button @click.stop="deleteItin(evt)" class="text-[10px] text-red-500 bg-red-50 border border-red-100 px-3 py-1.5 rounded-lg font-bold active:bg-red-100">刪除</button>
                 </div>
             </div>
           </div>
@@ -211,12 +221,14 @@
         
         <div class="bg-gradient-to-br from-[#3b82f6] to-[#6366f1] text-white rounded-3xl p-6 shadow-xl mb-6 relative overflow-hidden ring-1 ring-white/20">
            <div class="absolute -top-10 -right-10 w-48 h-48 bg-white opacity-10 rounded-full blur-3xl"></div>
+           
            <div class="border-b border-white/10 pb-3 mb-3 flex justify-between items-center relative z-10"><div class="text-xs font-medium opacity-80 tracking-widest uppercase">家齊+亭穎 預算</div><div class="font-bold text-lg font-mono tracking-wider opacity-90">500,000</div></div>
            <div class="flex justify-between items-end relative z-10">
                <div><div class="text-4xl font-black tracking-tighter drop-shadow-sm">{{ formatNumber(Math.round(500000 - publicSpent)) }}</div><div class="text-xs font-bold opacity-70 mt-1">剩餘經費 (NTD)</div></div>
                <div class="text-right"><div class="text-lg font-bold">{{ formatNumber(Math.round(publicSpent)) }}</div><div class="text-xs opacity-70 font-medium">已支出 ({{ Math.round(publicSpent/500000*100) }}%)</div></div>
            </div>
            <div class="w-full bg-black/20 h-2 rounded-full mt-5 overflow-hidden relative z-10"><div class="bg-white h-full shadow-[0_0_10px_rgba(255,255,255,0.5)] transition-all duration-1000" :style="{width: Math.min((publicSpent/500000)*100, 100) + '%'}"></div></div>
+           
            <div class="mt-4 pt-3 border-t border-white/20 flex justify-between items-center text-yellow-100 relative z-10">
                <span class="text-xs font-bold">媽媽個人與分攤支出</span>
                <span class="font-bold font-mono text-lg">+ {{ formatNumber(Math.round(momSpent)) }}</span>
@@ -239,7 +251,7 @@
                     <div class="text-right min-w-[90px]">
                         <div class="font-bold text-slate-800 text-lg tracking-tight">{{ exp.amount }} <span class="text-[10px] text-slate-400 font-bold">{{ exp.currency }}</span></div>
                         <div v-if="exp.currency !== 'NTD'" class="text-[10px] text-slate-400 font-mono font-bold mt-1">≈ {{ formatNumber(getAmountTWD(exp)) }}</div>
-                        <div class="mt-3 flex gap-2 justify-end"><button @click="openEditExp(exp)" class="text-[10px] text-sky-600 bg-white border border-sky-100 px-2 py-1 rounded">編輯</button><button @click="deleteExp(exp)" class="text-[10px] text-red-500 bg-white border border-red-100 px-2 py-1 rounded">刪除</button></div>
+                        <div class="mt-3 flex gap-2 justify-end opacity-60 hover:opacity-100 transition prevent-swipe"><button @click.stop="openEditExp(exp)" class="text-[10px] text-sky-600 bg-white border border-sky-100 px-2 py-1 rounded">編輯</button><button @click.stop="deleteExp(exp)" class="text-[10px] text-red-500 bg-white border border-red-100 px-2 py-1 rounded">刪除</button></div>
                     </div>
                 </div>
             </div>
@@ -395,6 +407,13 @@ createApp({
 
     const handleTouchStart = (e) => { 
         if (e.target.closest('.swipe-protected')) return; 
+        
+        // 修正：如果點擊到可選取的文字或按鈕，不啟動滑動偵測
+        if (e.target.closest('.allow-select') || e.target.closest('.prevent-swipe') || e.target.closest('button')) {
+            isPulling.value = false;
+            return;
+        }
+
         const touch = e.touches[0];
         startY.value = touch.clientY; startX.value = touch.clientX; 
         
@@ -439,24 +458,24 @@ createApp({
             const endX = e.changedTouches[0].clientX;
             const diffX = endX - startX.value;
             const screenWidth = window.innerWidth;
-            const edgeThreshold = screenWidth * 0.15; // 左右 15% 邊緣
+            const edgeThreshold = screenWidth * 0.15; // 15% 邊緣
             const isLeftEdge = startX.value < edgeThreshold;
             const isRightEdge = startX.value > (screenWidth - edgeThreshold);
 
             if (Math.abs(diffX) > 50) {
                 if (tab.value === 'itinerary') {
-                    if (diffX < 0) { // 向左滑 (下一頁/天)
+                    if (diffX < 0) { // 向左滑
                         if (isRightEdge) switchTab('next'); 
                         else switchDay('next');
-                    } else { // 向右滑 (上一頁/天)
-                        if (isLeftEdge) { /* 第一頁無動作 */ }
+                    } else { // 向右滑
+                        if (isLeftEdge) { /* No prev tab */ }
                         else switchDay('prev');
                     }
                 } else if (tab.value === 'expense') {
-                    if (diffX < 0) switchTab('next'); 
-                    else switchTab('prev'); 
+                    if (diffX < 0 && isRightEdge) switchTab('next'); 
+                    else if (diffX > 0 && isLeftEdge) switchTab('prev'); 
                 } else if (tab.value === 'analysis') {
-                    if (diffX > 0) switchTab('prev'); 
+                    if (diffX > 0 && isLeftEdge) switchTab('prev'); 
                 }
             }
         }
@@ -559,17 +578,14 @@ createApp({
         if (navigator.onLine) { processSyncQueue(); }
     };
 
-    // 🔴 關鍵修復：新增時即刻產生 ID，確保暫存資料可被編輯/刪除
     const submitExp = () => {
        if(!newExp.value.amount || !newExp.value.payer || !newExp.value.item) { alert('請填寫完整'); return; }
        if(newExp.value.involved.length === 0) { alert('至少選一位分攤者'); return; }
        const currentRate = rates.value[newExp.value.currency] || 1;
        const amtTWD = Math.round(newExp.value.amount * currentRate);
-       const tempId = 'temp_' + Date.now(); // 預先產生 ID
-       const data = { ...newExp.value, amountTWD: amtTWD, row: tempId }; // 包含 ID
-       
+       const data = { ...newExp.value, amountTWD: amtTWD };
        handleAction('addExpense', data, () => {
-           const tempItem = { ...data, date: new Date().toISOString().split('T')[0], time: '剛剛', isPending: true };
+           const tempItem = { ...data, row: 'temp_' + Date.now(), date: new Date().toISOString().split('T')[0], time: '剛剛', isPending: true };
            expenses.value.unshift(tempItem);
            newExp.value.amount = null; newExp.value.note = '';
        });
@@ -579,18 +595,6 @@ createApp({
         const currentRate = rates.value[editExpForm.value.currency] || 1;
         editExpForm.value.amountTWD = Math.round(editExpForm.value.amount * currentRate);
         const data = { ...editExpForm.value };
-        
-        // 🔴 關鍵修復：如果是編輯暫存資料，直接更新 Queue，不新增 Action
-        if (String(data.row).startsWith('temp_')) {
-            const qIdx = syncQueue.value.findIndex(q => q.data.row === data.row);
-            if (qIdx !== -1) { syncQueue.value[qIdx].data = data; } // 更新 Queue
-            const idx = expenses.value.findIndex(e => e.row === data.row);
-            if (idx !== -1) { expenses.value[idx] = { ...expenses.value[idx], ...data }; }
-            saveLocal({ expenses: expenses.value, itinerary: itinerary.value, members: members.value, rates: rates.value });
-            showExpModal.value = false;
-            return;
-        }
-
         handleAction('editExpense', data, () => {
             const idx = expenses.value.findIndex(e => e.row === data.row);
             if (idx !== -1) { expenses.value[idx] = { ...expenses.value[idx], ...data, isPending: true }; }
@@ -602,9 +606,7 @@ createApp({
         if(!confirm('刪除此筆消費？')) return;
         if (String(exp.row).startsWith('temp_')) {
             expenses.value = expenses.value.filter(e => e.row !== exp.row);
-            // 🔴 關鍵修復：依 ID 移除 Queue
-            const targetIdx = syncQueue.value.findIndex(q => q.data.row === exp.row);
-            if (targetIdx !== -1) { syncQueue.value.splice(targetIdx, 1); }
+            syncQueue.value = syncQueue.value.filter(q => !(q.action === 'addExpense' && q.data.item === exp.item && q.data.amount === exp.amount));
             saveLocal({ expenses: expenses.value, itinerary: itinerary.value, members: members.value, rates: rates.value });
             return;
         }
@@ -614,29 +616,15 @@ createApp({
     const submitItin = () => {
        if(!itinForm.value.title) return;
        const data = { ...itinForm.value, date: selDate.value };
-       
        if (isEditing.value) {
-           // 🔴 關鍵修復：編輯暫存行程
-           if (String(data.row).startsWith('temp_')) {
-               const qIdx = syncQueue.value.findIndex(q => q.data.row === data.row);
-               if (qIdx !== -1) { syncQueue.value[qIdx].data = data; }
-               const idx = itinerary.value.findIndex(e => e.row === data.row);
-               if(idx !== -1) itinerary.value[idx] = { ...itinerary.value[idx], ...data };
-               saveLocal({ expenses: expenses.value, itinerary: itinerary.value, members: members.value, rates: rates.value });
-               showItinModal.value = false;
-               return;
-           }
-           
            handleAction('editItinerary', data, () => {
                const idx = itinerary.value.findIndex(e => e.row === data.row);
                if(idx !== -1) itinerary.value[idx] = { ...itinerary.value[idx], ...data, isPending: true };
                showItinModal.value = false;
            });
        } else {
-           const tempId = 'temp_' + Date.now();
-           const payload = { ...data, row: tempId };
-           handleAction('addItinerary', payload, () => {
-               const tempItem = { ...payload, isPending: true };
+           handleAction('addItinerary', data, () => {
+               const tempItem = { ...data, row: 'temp_'+Date.now(), isPending: true };
                itinerary.value.push(tempItem);
                showItinModal.value = false;
            });
@@ -647,9 +635,7 @@ createApp({
         if(!confirm('刪除行程？')) return;
         if (String(evt.row).startsWith('temp_')) {
             itinerary.value = itinerary.value.filter(e => e.row !== evt.row);
-            // 🔴 關鍵修復：依 ID 移除 Queue
-            const targetIdx = syncQueue.value.findIndex(q => q.data.row === evt.row);
-            if (targetIdx !== -1) { syncQueue.value.splice(targetIdx, 1); }
+            syncQueue.value = syncQueue.value.filter(q => !(q.action === 'addItinerary' && q.data.title === evt.title));
             saveLocal({ expenses: expenses.value, itinerary: itinerary.value, members: members.value, rates: rates.value });
             return;
         }
@@ -667,6 +653,7 @@ createApp({
         }
     };
 
+    // Helpers
     const openRateModal = () => { tempRates.value = { ...rates.value }; showRateModal.value = true; };
     const selectDate = (date) => { selDate.value = date; scrollToDateBtn(date); };
     const scrollToDateBtn = (date) => {
@@ -720,14 +707,18 @@ createApp({
     const getEvents = (d) => itinerary.value.filter(e => e.date === d).sort((a,b)=>a.startTime.localeCompare(b.startTime));
     const formatNumber = (n) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
+    // 關鍵修復：加入延遲確保 DOM 生成
     const changeTabToAnalysis = () => { 
         tab.value = 'analysis'; 
-        setTimeout(() => { renderChart(); }, 300);
+        // 延遲 300ms 等待 Transition 動畫結束，確保 Canvas 存在
+        setTimeout(() => {
+            renderChart();
+        }, 300);
     };
 
     const renderChart = () => {
         const ctx = document.getElementById('expenseChart');
-        if(!ctx) return; 
+        if(!ctx) return; // 再次檢查，防止報錯
         const stats = {};
         filteredExpenses.value.forEach(e => { if(!stats[e.item]) stats[e.item] = 0; stats[e.item] += getAmountTWD(e); });
         const nordicColors = ['#38bdf8', '#818cf8', '#c084fc', '#f472b6', '#fb7185', '#22d3ee', '#34d399', '#a78bfa', '#fbcfe8', '#e2e8f0'];
