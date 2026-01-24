@@ -104,8 +104,6 @@
         user-select: text !important; 
         -webkit-user-select: text !important; 
         cursor: text; 
-        /* 關鍵：讓瀏覽器知道這個區域優先處理操作，防止 JS 誤判滑動 */
-        touch-action: manipulation;
     }
     .line-clamp-6 {
         display: -webkit-box;
@@ -113,6 +111,8 @@
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
+    
+    /* 強制文字換行，解決長字串破版問題 */
     .break-anywhere {
         overflow-wrap: anywhere;
         word-break: break-all;
@@ -375,11 +375,12 @@ createApp({
     const todayDate = ref('');
     const todayWeekday = ref('');
     
-    // 展開狀態與防止選取時觸發重繪
+    // 展開狀態 ID
     const expandedId = ref(null);
     const toggleExpand = (id) => {
-        // 核心修復：如果有選取文字，不執行展開，保持原生選單存在
-        if(window.getSelection().toString().length > 0) return;
+        // Fix: 如果使用者正在選取文字，則不觸發展開
+        const selection = window.getSelection();
+        if (selection && selection.toString().length > 0) return;
         
         if(expandedId.value === id) expandedId.value = null;
         else expandedId.value = id;
@@ -434,11 +435,9 @@ createApp({
     window.addEventListener('online', () => { isOnline.value = true; processSyncQueue(); });
     window.addEventListener('offline', () => { isOnline.value = false; });
 
-    // 核心修復：如果碰到文字選取區，直接 return，不進行任何滑動計算
+    // 關鍵修改：不完全阻擋文字區，改為在 Move 時判斷
     const handleTouchStart = (e) => { 
-        if (e.target.closest('.swipe-protected')) return; 
-        if (e.target.closest('.allow-select')) return; // 這裡如果不return，後續滑動邏輯會干擾選取
-        
+        if (e.target.closest('.swipe-protected')) return; // 只阻擋日期列
         const touch = e.touches[0];
         startY.value = touch.clientY; startX.value = touch.clientX; 
         
@@ -460,6 +459,9 @@ createApp({
             isHorizontalDrag.value = Math.abs(diffX) > Math.abs(diffY);
         }
         
+        // 關鍵修改：若使用者正在選取文字 (Selection不為空)，則強制停止自定義滑動
+        if (window.getSelection().toString().length > 0) return;
+
         if (isHorizontalDrag.value === true) {
             if(e.cancelable) e.preventDefault(); 
         } else {
@@ -476,12 +478,16 @@ createApp({
         if (!isPulling.value) return;
         isPulling.value = false;
         
+        // 如果正在選取文字，不觸發換頁
+        if (window.getSelection().toString().length > 0) return;
+
         if (pullDistance.value > 60) { pullDistance.value = 60; isPullRefreshing.value = true; loadData(); return; }
         else pullDistance.value = 0;
         
         if (isHorizontalDrag.value === true) {
             const endX = e.changedTouches[0].clientX;
             const diffX = endX - startX.value;
+            
             const screenWidth = window.innerWidth;
             const edgeThreshold = screenWidth * 0.15;
             const isLeftEdge = startX.value < edgeThreshold;
