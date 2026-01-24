@@ -256,7 +256,7 @@
       <div class="glass-input px-3 py-1.5 rounded-full text-[10px] font-bold text-slate-500 tracking-wide">AUG 30 - SEP 26</div>
       <div class="flex gap-2">
         <span v-if="!isOnline" class="bg-slate-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md flex items-center gap-1">離線</span>
-        <span v-else class="bg-gradient-to-r from-sky-400 to-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md">{{ tripStatus }}</span>
+        <span v-if="tripStatus" class="bg-gradient-to-r from-sky-400 to-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md">{{ tripStatus }}</span>
       </div>
     </div>
   </div>
@@ -671,14 +671,24 @@ createApp({
       expandedId.value = (expandedId.value === id) ? null : id;
     };
 
+    // 修正重點：Trip Status 邏輯
     const tripStatus = computed(() => {
       const now = new Date();
       const start = new Date('2026-08-30');
       const end = new Date('2026-09-26');
       now.setHours(0,0,0,0); start.setHours(0,0,0,0); end.setHours(0,0,0,0);
+      
+      // 出發前：顯示倒數
       if (now < start) return `倒數 ${Math.ceil((start - now)/86400000)} 天`;
-      if (now >= start && now <= end) return '旅程中';
-      return '回味無窮';
+      
+      // 旅程中：顯示 Day X
+      if (now >= start && now <= end) {
+         const diff = Math.floor((now - start)/86400000) + 1;
+         return `DAY ${diff}`;
+      }
+      
+      // 結束後：不顯示
+      return '';
     });
 
     const tripDates = [];
@@ -901,11 +911,6 @@ createApp({
       return false;
     };
 
-    // ==========================================
-    // Core Sync Logic with Instant Feedback
-    // ==========================================
-    
-    // 修正點 1: 新增這個 Helper 來轉換正確的後端指令名稱
     const getBackendActionName = (type, action) => {
       if (action === 'delete') return 'deleteRow';
       const suffix = (type === 'itin') ? 'Itinerary' : 'Expense';
@@ -922,7 +927,6 @@ createApp({
 
       for (const job of queue) {
         try {
-          // 修正點 2: 使用 helper 產生正確名稱
           const apiAction = getBackendActionName(job.type, job.action);
           const res = await callApi(apiAction, job.data, 'POST');
           
@@ -947,7 +951,6 @@ createApp({
        if (navigator.onLine) {
          isSyncing.value = true;
          try {
-           // 修正點 3: 使用 helper 產生正確名稱
            const apiAction = getBackendActionName(type, action);
            const res = await callApi(apiAction, data, 'POST');
            if (!res) throw new Error("API Fail");
@@ -1219,7 +1222,6 @@ createApp({
         syncQueue.value.splice(pendingIdx, 1);
         saveLocal({});
       } else {
-        // 修正點 4: 傳送 deleteRow 需要 sheetName
         handleCRUD('itin', 'delete', { row: evt.row, sheetName: 'Itinerary' });
       }
     };
@@ -1236,7 +1238,6 @@ createApp({
         syncQueue.value.splice(pendingIdx, 1);
         saveLocal({});
       } else {
-        // 修正點 5: 傳送 deleteRow 需要 sheetName
         handleCRUD('exp', 'delete', { row: exp.row, sheetName: 'Expenses' });
       }
     };
@@ -1290,7 +1291,6 @@ createApp({
        rates.value = { ...tempRates.value };
        saveLocal({});
        showRateModal.value = false;
-       // 同步更新後端匯率
        callApi('updateRates', rates.value, 'POST');
     };
 
