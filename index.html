@@ -29,6 +29,7 @@
       background-color: #f0f9ff;
       color: #1e3a8a;
       overscroll-behavior: none;
+      /* Global selection disabled to prevent UI flickering, specific areas re-enabled below */
       user-select: none;
       -webkit-user-select: none;
       -webkit-tap-highlight-color: transparent;
@@ -172,23 +173,14 @@
     .cat-food    { border-left: 4px solid #f97316; background: white; }
     .cat-note    { border-left: 4px solid #64748b; background: white; }
 
-    /* Enhanced Selection Styles */
+    /* Enhanced Selection Styles for iOS Safari */
     .allow-select {
       user-select: text !important;
       -webkit-user-select: text !important;
       -webkit-touch-callout: default !important;
-      cursor: text;
-      position: relative;
-      z-index: 2; /* Ensure it sits above background hits */
+      cursor: auto; /* Changed from text to auto to act more native */
     }
     .allow-select::selection { background: rgba(56, 189, 248, 0.25); }
-
-    .line-clamp-6 {
-      display: -webkit-box;
-      -webkit-line-clamp: 6;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
 
     .break-anywhere { overflow-wrap: anywhere; word-break: break-all; }
 
@@ -314,7 +306,7 @@
               </div>
             </div>
 
-            <div class="flex-1 p-4 relative min-w-0" @click="toggleExpand(evt.row)">
+            <div class="flex-1 p-4 relative min-w-0">
               <div class="flex justify-between items-start">
                 <span v-if="!evt.link" class="font-bold text-base text-slate-800 leading-tight truncate pr-2">
                   {{ evt.title }}
@@ -333,8 +325,6 @@
 
               <div
                 class="text-sm mt-3 text-slate-600 whitespace-pre-wrap opacity-90 allow-select break-anywhere"
-                :class="{'line-clamp-6': expandedId !== evt.row}"
-                @click.stop="handleTextClick(evt.row)"
                 v-if="evt.note"
               >{{ evt.note }}</div>
 
@@ -768,29 +758,6 @@ createApp({
     const todayDate = ref('');
     const todayWeekday = ref('');
 
-    const hasTextSelection = () => {
-      const sel = window.getSelection();
-      return !!(sel && sel.toString && sel.toString().length > 0);
-    };
-
-    const expandedId = ref(null);
-    const toggleExpand = (id) => {
-      // Basic check, but handleTextClick is safer
-      if (hasTextSelection()) return;
-      expandedId.value = (expandedId.value === id) ? null : id;
-    };
-    
-    // NEW: Dedicated handler for text clicks
-    const handleTextClick = (id) => {
-      if (hasTextSelection()) {
-        // If text is selected, do nothing.
-        // The @click.stop prevents the parent from seeing this click.
-        // This keeps the DOM stable and lets the native menu persist.
-        return;
-      }
-      toggleExpand(id);
-    };
-
     const tripStatus = computed(() => {
       const now = new Date();
       const start = new Date('2026-08-30');
@@ -854,6 +821,12 @@ createApp({
       inSelectable:false,
       selectIntent:false,
       longPressTimer:null
+    };
+    
+    // Simple helper to check text selection
+    const hasTextSelection = () => {
+      const sel = window.getSelection();
+      return !!(sel && sel.toString && sel.toString().length > 0);
     };
 
     const isBlockedTarget = (target) => {
@@ -1491,7 +1464,7 @@ createApp({
       todayDate, todayWeekday,
       pullDistance, isPullRefreshing, refreshText,
       tripStatus, tripDates, selDate,
-      itinerary, expandedId, toggleExpand, handleTextClick,
+      itinerary, 
       selectDate, getDayInfo, getEvents, getCategoryClass,
       expenses, rates, members, 
       filters, showFilterMenu, uniqueExpDates, uniqueItems, uniqueLocations, uniquePayments,
