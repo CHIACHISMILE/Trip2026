@@ -191,7 +191,9 @@
     }
     @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
+    /* Pending / Sync Styles - Modified */
     .pending-sync { opacity: 0.85; border: 2px dashed #f59e0b !important; position: relative; }
+    /* Removed ::after content as requested */
     .pending-badge { display: none; }
 
     .tag { display:inline-flex; align-items:center; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
@@ -207,6 +209,13 @@
     .modal-enter-from, .modal-leave-to { opacity: 0; }
     .modal-enter-active .modal-content, .modal-leave-active .modal-content { transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
     .modal-enter-from .modal-content, .modal-leave-to .modal-content { transform: scale(0.9) translateY(20px); }
+    
+    /* Filter Badge Active State */
+    .filter-active {
+      background-color: #e0f2fe !important;
+      border-color: #38bdf8 !important;
+      color: #0284c7 !important;
+    }
   </style>
 </head>
 
@@ -391,28 +400,16 @@
       </div>
 
       <div v-else-if="tab==='analysis'" key="analysis">
-        <div class="flex justify-between items-center mb-3 swipe-protected">
-          <div class="flex gap-2 flex-wrap flex-1 mr-2">
-             <div v-if="activeFilterCount > 0" class="flex gap-2 flex-wrap">
-               <span v-for="(val, key) in activeFilters" :key="key" 
-                     class="bg-blue-100 text-blue-800 text-[10px] px-2 py-1 rounded-full font-bold flex items-center gap-1 border border-blue-200">
-                 {{ getFilterLabel(key, val) }}
-                 <button @click="clearFilter(key)" class="w-4 h-4 rounded-full bg-blue-200 flex items-center justify-center text-blue-600 hover:bg-blue-300">×</button>
-               </span>
-               <button @click="resetFilters" class="text-[10px] text-slate-400 underline font-bold px-1">清除全部</button>
-             </div>
-          </div>
-          <div class="flex gap-2 flex-shrink-0">
-            <button @click="showFilterModal=true"
-                    :class="['text-xs px-3 py-1.5 rounded-full flex items-center shadow-sm backdrop-blur-sm font-bold border transition',
-                             activeFilterCount > 0 ? 'bg-sky-500 text-white border-sky-500' : 'bg-white/50 text-slate-500 border-white']">
-              <span class="mr-1">🌪️</span>篩選 {{ activeFilterCount > 0 ? `(${activeFilterCount})` : '' }}
-            </button>
-            <button @click="openRateModal"
-                    class="text-xs text-slate-500 bg-white/50 border border-white px-3 py-1.5 rounded-full flex items-center shadow-sm backdrop-blur-sm font-bold">
-              匯率
-            </button>
-          </div>
+        <div class="flex justify-end gap-2 mb-3 swipe-protected">
+          <button @click="showFilterModal=true"
+                  class="text-xs text-slate-500 bg-white border border-slate-200 px-4 py-2 rounded-full flex items-center shadow-sm font-bold gap-1"
+                  :class="{'filter-active': isFilterActive}">
+            <span v-if="isFilterActive">●</span> 篩選器
+          </button>
+          <button @click="openRateModal"
+                  class="text-xs text-slate-500 bg-white/50 border border-white px-4 py-2 rounded-full flex items-center shadow-sm backdrop-blur-sm font-bold">
+            匯率設定
+          </button>
         </div>
 
         <div class="bg-gradient-to-br from-[#3b82f6] to-[#6366f1] text-white rounded-3xl p-6 shadow-xl mb-6 relative overflow-hidden ring-1 ring-white/20">
@@ -446,7 +443,7 @@
         </div>
 
         <div class="flex justify-between items-center mb-4 swipe-protected">
-          <h3 class="font-bold text-slate-700 text-lg">消費明細 <span class="text-xs font-normal opacity-50 ml-2">({{filteredExpenses.length}}筆)</span></h3>
+          <h3 class="font-bold text-slate-700 text-lg">消費明細 ({{ filteredExpenses.length }})</h3>
         </div>
 
         <div class="glass-card p-4 mb-6">
@@ -495,7 +492,7 @@
             </div>
           </div>
 
-          <div v-if="filteredExpenses.length===0" class="text-center text-slate-400 py-12 text-sm glass-panel rounded-2xl">尚無符合條件的消費紀錄</div>
+          <div v-if="filteredExpenses.length===0" class="text-center text-slate-400 py-12 text-sm glass-panel rounded-2xl">尚無消費紀錄</div>
         </div>
 
         <div class="glass-card p-6 mb-8">
@@ -561,8 +558,9 @@
             <textarea v-model="itinForm.note" rows="3" class="w-full glass-input p-3 rounded-xl mt-1 outline-none text-sm" placeholder="備註事項..."></textarea>
           </div>
         </div>
-        <div class="p-4 bg-slate-50 border-t">
-          <button @click="submitItin" class="w-full btn-glacier py-3 rounded-xl font-bold shadow-lg">儲存行程</button>
+        <div class="p-4 bg-slate-50 border-t flex gap-2">
+          <button @click="showItinModal=false" class="flex-1 px-4 py-3 bg-slate-200 text-slate-600 rounded-xl font-bold">取消</button>
+          <button @click="submitItin" class="flex-1 btn-glacier py-3 rounded-xl font-bold shadow-lg">儲存</button>
         </div>
       </div>
     </div>
@@ -631,60 +629,6 @@
   </Transition>
 
   <Transition name="modal">
-    <div v-if="showFilterModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 swipe-protected">
-      <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" @click="showFilterModal=false"></div>
-      <div class="modal-content w-full max-w-sm bg-white rounded-3xl shadow-2xl relative z-10 p-6 space-y-4">
-        <div class="flex justify-between items-center border-b pb-3 mb-2">
-          <h3 class="font-bold text-slate-800 text-lg">篩選條件</h3>
-          <button @click="resetFilters" class="text-xs text-sky-600 font-bold">重置條件</button>
-        </div>
-        
-        <div>
-          <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">日期</label>
-          <select v-model="filterCriteria.date" class="w-full glass-input p-3 rounded-xl text-sm font-bold">
-            <option value="ALL">全部日期</option>
-            <option v-for="d in uniqueExpDates" :key="d" :value="d">{{ d }}</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">付款人</label>
-          <select v-model="filterCriteria.payer" class="w-full glass-input p-3 rounded-xl text-sm font-bold">
-            <option value="ALL">所有人</option>
-            <option v-for="p in uniquePayers" :key="p" :value="p">{{ p }}</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">地點</label>
-          <select v-model="filterCriteria.location" class="w-full glass-input p-3 rounded-xl text-sm font-bold">
-            <option value="ALL">所有地點</option>
-            <option v-for="l in uniqueLocations" :key="l" :value="l">{{ l }}</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">消費類別/項目</label>
-          <select v-model="filterCriteria.item" class="w-full glass-input p-3 rounded-xl text-sm font-bold">
-            <option value="ALL">所有類別</option>
-            <option v-for="i in uniqueItems" :key="i" :value="i">{{ i }}</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">付款方式</label>
-          <select v-model="filterCriteria.payment" class="w-full glass-input p-3 rounded-xl text-sm font-bold">
-            <option value="ALL">所有方式</option>
-            <option v-for="p in uniquePayments" :key="p" :value="p">{{ p }}</option>
-          </select>
-        </div>
-
-        <button @click="showFilterModal=false" class="w-full btn-glacier py-3 rounded-xl font-bold mt-4">查看結果</button>
-      </div>
-    </div>
-  </Transition>
-
-  <Transition name="modal">
     <div v-if="showRateModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 swipe-protected">
       <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" @click="showRateModal=false"></div>
       <div class="modal-content w-full max-w-sm bg-white rounded-3xl shadow-2xl relative z-10 p-6">
@@ -696,6 +640,63 @@
           </div>
         </div>
         <button @click="saveRates" class="w-full btn-glacier mt-6 py-3 rounded-xl font-bold">儲存設定</button>
+      </div>
+    </div>
+  </Transition>
+
+  <Transition name="modal">
+    <div v-if="showFilterModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 swipe-protected">
+      <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" @click="showFilterModal=false"></div>
+      <div class="modal-content w-full max-w-sm bg-white rounded-3xl shadow-2xl relative z-10 p-6 space-y-4">
+        <div class="flex justify-between items-center mb-2">
+          <h3 class="font-bold text-slate-800 text-lg">篩選消費紀錄</h3>
+          <button @click="resetFilters" class="text-xs text-sky-600 font-bold px-2 py-1 bg-sky-50 rounded">重置</button>
+        </div>
+
+        <div class="space-y-3">
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase">日期</label>
+            <select v-model="filterCriteria.date" class="w-full glass-input p-3 rounded-xl mt-1 outline-none text-sm font-bold">
+              <option value="ALL">全部日期</option>
+              <option v-for="d in uniqueExpDates" :key="d" :value="d">{{ d }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase">付款人</label>
+            <select v-model="filterCriteria.payer" class="w-full glass-input p-3 rounded-xl mt-1 outline-none text-sm font-bold">
+              <option value="ALL">所有人</option>
+              <option v-for="p in uniquePayers" :key="p" :value="p">{{ p }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase">地點</label>
+            <select v-model="filterCriteria.location" class="w-full glass-input p-3 rounded-xl mt-1 outline-none text-sm font-bold">
+              <option value="ALL">所有地點</option>
+              <option v-for="l in uniqueLocations" :key="l" :value="l">{{ l }}</option>
+            </select>
+          </div>
+
+          <div class="flex gap-3">
+             <div class="w-1/2">
+               <label class="text-[10px] font-bold text-slate-400 uppercase">方式</label>
+               <select v-model="filterCriteria.payment" class="w-full glass-input p-3 rounded-xl mt-1 outline-none text-sm font-bold">
+                 <option value="ALL">全部</option>
+                 <option v-for="p in uniquePayments" :key="p" :value="p">{{ p }}</option>
+               </select>
+             </div>
+             <div class="w-1/2">
+               <label class="text-[10px] font-bold text-slate-400 uppercase">類別</label>
+               <select v-model="filterCriteria.item" class="w-full glass-input p-3 rounded-xl mt-1 outline-none text-sm font-bold">
+                 <option value="ALL">全部</option>
+                 <option v-for="i in uniqueItems" :key="i" :value="i">{{ i }}</option>
+               </select>
+             </div>
+          </div>
+        </div>
+
+        <button @click="showFilterModal=false" class="w-full btn-glacier mt-4 py-3 rounded-xl font-bold shadow-lg">套用篩選</button>
       </div>
     </div>
   </Transition>
@@ -753,10 +754,6 @@ createApp({
     const itinerary = ref([]);
     const rates = ref({});
 
-    // Filter Logic
-    const showFilterModal = ref(false);
-    const filterCriteria = ref({ date: 'ALL', payer: 'ALL', location: 'ALL', item: 'ALL', payment: 'ALL' });
-
     const dateContainer = ref(null);
     const scrollContainer = ref(null);
 
@@ -775,11 +772,14 @@ createApp({
       const start = new Date('2026-08-30');
       const end = new Date('2026-09-26');
       now.setHours(0,0,0,0); start.setHours(0,0,0,0); end.setHours(0,0,0,0);
+      
       if (now < start) return `倒數 ${Math.ceil((start - now)/86400000)} 天`;
+      
       if (now >= start && now <= end) {
          const diff = Math.floor((now - start)/86400000) + 1;
          return `DAY ${diff}`;
       }
+      
       return '';
     });
 
@@ -789,6 +789,10 @@ createApp({
       tripDates.push({ date: d.toISOString().split('T')[0], short: (d.getMonth()+1)+'/'+d.getDate() });
     }
     const selDate = ref(tripDates[0].date);
+    
+    // Filter State
+    const showFilterModal = ref(false);
+    const filterCriteria = ref({ date: 'ALL', payer: 'ALL', location: 'ALL', payment: 'ALL', item: 'ALL' });
 
     const showRateModal = ref(false);
     const showItinModal = ref(false);
@@ -854,8 +858,10 @@ createApp({
         gesture.startX = t.clientX;
         gesture.startY = t.clientY;
         
+        // 15% Edge Logic
         const w = window.innerWidth;
         const edgeThreshold = w * 0.15;
+        
         gesture.startedAtLeftEdge = (gesture.startX <= edgeThreshold);
         gesture.startedAtRightEdge = (gesture.startX >= w - edgeThreshold);
 
@@ -1012,7 +1018,7 @@ createApp({
         itinerary.value = res.itinerary;
         members.value = res.members;
         rates.value = res.rates;
-        saveLocal({}); 
+        saveLocal({}); // Save the fresh data with real IDs to local storage
         if (tab.value === 'analysis') scheduleRenderChart();
       }
     };
@@ -1139,43 +1145,33 @@ createApp({
     const getEvents = (d) => itinerary.value.filter(e => e.date === d).sort((a,b)=>a.startTime.localeCompare(b.startTime));
     const formatNumber = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-    // Filter Logic
+    // Dynamic Filter Lists
     const uniqueExpDates = computed(() => [...new Set(expenses.value.map(e => e.date))].sort());
-    const uniqueLocations = computed(() => [...new Set(expenses.value.map(e => e.location))].filter(Boolean).sort());
-    const uniquePayers = computed(() => members.value);
-    const uniqueItems = computed(() => [...new Set(expenses.value.map(e => e.item))].filter(Boolean).sort());
-    const uniquePayments = computed(() => [...new Set(expenses.value.map(e => e.payment))].filter(Boolean).sort());
+    const uniquePayers = computed(() => [...new Set(expenses.value.map(e => e.payer))].filter(Boolean));
+    const uniqueLocations = computed(() => [...new Set(expenses.value.map(e => e.location))].filter(Boolean));
+    const uniquePayments = computed(() => [...new Set(expenses.value.map(e => e.payment))].filter(Boolean));
+    const uniqueItems = computed(() => [...new Set(expenses.value.map(e => e.item))].filter(Boolean));
 
-    const activeFilters = computed(() => {
-      const active = {};
-      if(filterCriteria.value.date !== 'ALL') active.date = filterCriteria.value.date;
-      if(filterCriteria.value.payer !== 'ALL') active.payer = filterCriteria.value.payer;
-      if(filterCriteria.value.location !== 'ALL') active.location = filterCriteria.value.location;
-      if(filterCriteria.value.item !== 'ALL') active.item = filterCriteria.value.item;
-      if(filterCriteria.value.payment !== 'ALL') active.payment = filterCriteria.value.payment;
-      return active;
+    const isFilterActive = computed(() => {
+      const c = filterCriteria.value;
+      return c.date !== 'ALL' || c.payer !== 'ALL' || c.location !== 'ALL' || c.payment !== 'ALL' || c.item !== 'ALL';
     });
-
-    const activeFilterCount = computed(() => Object.keys(activeFilters.value).length);
 
     const filteredExpenses = computed(() => {
       return expenses.value.filter(e => {
-        if(filterCriteria.value.date !== 'ALL' && e.date !== filterCriteria.value.date) return false;
-        if(filterCriteria.value.payer !== 'ALL' && e.payer !== filterCriteria.value.payer) return false;
-        if(filterCriteria.value.location !== 'ALL' && e.location !== filterCriteria.value.location) return false;
-        if(filterCriteria.value.item !== 'ALL' && e.item !== filterCriteria.value.item) return false;
-        if(filterCriteria.value.payment !== 'ALL' && e.payment !== filterCriteria.value.payment) return false;
-        return true;
+        const c = filterCriteria.value;
+        const matchDate = c.date === 'ALL' || e.date === c.date;
+        const matchPayer = c.payer === 'ALL' || e.payer === c.payer;
+        const matchLocation = c.location === 'ALL' || e.location === c.location;
+        const matchPayment = c.payment === 'ALL' || e.payment === c.payment;
+        const matchItem = c.item === 'ALL' || e.item === c.item;
+        return matchDate && matchPayer && matchLocation && matchPayment && matchItem;
       });
     });
 
-    const getFilterLabel = (key, val) => {
-       const map = { date: '📅', payer: '👤', location: '📍', item: '🏷️', payment: '💳' };
-       return (map[key] || '') + ' ' + val;
+    const resetFilters = () => {
+      filterCriteria.value = { date: 'ALL', payer: 'ALL', location: 'ALL', payment: 'ALL', item: 'ALL' };
     };
-
-    const clearFilter = (key) => { filterCriteria.value[key] = 'ALL'; };
-    const resetFilters = () => { filterCriteria.value = { date: 'ALL', payer: 'ALL', location: 'ALL', item: 'ALL', payment: 'ALL' }; };
 
     const getAmountTWD = (exp) => {
       if (exp.amountTWD && exp.amountTWD > 0) return exp.amountTWD;
@@ -1324,7 +1320,8 @@ createApp({
       scheduleRenderChart();
     };
 
-    watch([tab, activeFilters], () => { if (tab.value === 'analysis') scheduleRenderChart(); }, { deep: true });
+    // Watch for tab changes and filter changes to update chart
+    watch([tab, filterCriteria], () => { if (tab.value === 'analysis') scheduleRenderChart(); }, { deep: true });
     watch(expenses, () => { if (tab.value === 'analysis') scheduleRenderChart(); }, { deep: true });
 
     const openRateModal = () => { tempRates.value = { ...rates.value }; showRateModal.value = true; };
@@ -1332,27 +1329,48 @@ createApp({
     const openEditItin = (evt) => { itinForm.value = { ...evt }; isEditing.value = true; showItinModal.value = true; };
     const openEditExp = (exp) => { editExpForm.value = JSON.parse(JSON.stringify(exp)); showExpModal.value = true; };
     
-    // Actions (unchanged logic, kept for brevity)
+    // ===================================
+    // Actions
+    // ===================================
+
     const deleteItin = async (evt) => { 
       if(!confirm('確定刪除?')) return; 
+      
       itinerary.value = itinerary.value.filter(x => x.row !== evt.row); 
-      const pendingIdx = syncQueue.value.findIndex(job => job.type === 'itin' && job.action === 'add' && job.data.row === evt.row);
-      if (pendingIdx !== -1) { syncQueue.value.splice(pendingIdx, 1); saveLocal({}); } 
-      else { handleCRUD('itin', 'delete', { row: evt.row, sheetName: 'Itinerary' }); }
+      
+      const pendingIdx = syncQueue.value.findIndex(job => 
+        job.type === 'itin' && job.action === 'add' && job.data.row === evt.row
+      );
+
+      if (pendingIdx !== -1) {
+        syncQueue.value.splice(pendingIdx, 1);
+        saveLocal({});
+      } else {
+        handleCRUD('itin', 'delete', { row: evt.row, sheetName: 'Itinerary' });
+      }
     };
 
     const deleteExp = async (exp) => { 
       if(!confirm('確定刪除?')) return; 
       expenses.value = expenses.value.filter(x => x.row !== exp.row); 
-      const pendingIdx = syncQueue.value.findIndex(job => job.type === 'exp' && job.action === 'add' && job.data.row === exp.row);
-      if (pendingIdx !== -1) { syncQueue.value.splice(pendingIdx, 1); saveLocal({}); } 
-      else { handleCRUD('exp', 'delete', { row: exp.row, sheetName: 'Expenses' }); }
+      
+      const pendingIdx = syncQueue.value.findIndex(job => 
+        job.type === 'exp' && job.action === 'add' && job.data.row === exp.row
+      );
+
+      if (pendingIdx !== -1) {
+        syncQueue.value.splice(pendingIdx, 1);
+        saveLocal({});
+      } else {
+        handleCRUD('exp', 'delete', { row: exp.row, sheetName: 'Expenses' });
+      }
     };
 
     const submitItin = async () => {
       if(!itinForm.value.title) return alert('請輸入標題');
       const newRow = isEditing.value ? itinForm.value.row : Date.now();
       const payload = { ...itinForm.value, row: newRow, date: selDate.value };
+      
       if(isEditing.value) {
          const idx = itinerary.value.findIndex(x => x.row === newRow);
          if(idx !== -1) itinerary.value[idx] = payload;
@@ -1373,8 +1391,10 @@ createApp({
         time: new Date().toTimeString().slice(0,5),
         amountTWD: Math.round(newExp.value.amount * (rates.value[newExp.value.currency] || 1))
       };
+      
       expenses.value.unshift(payload);
       handleCRUD('exp', 'add', payload);
+      
       newExp.value.amount = null; newExp.value.item = ''; newExp.value.note = ''; newExp.value.involved = [];
       alert('記帳成功');
     };
@@ -1382,8 +1402,10 @@ createApp({
     const submitEditExp = async () => {
         const idx = expenses.value.findIndex(e => e.row === editExpForm.value.row);
         if(idx === -1) return;
+        
         const updated = { ...editExpForm.value };
         updated.amountTWD = Math.round(updated.amount * (rates.value[updated.currency] || 1));
+        
         expenses.value[idx] = updated;
         showExpModal.value = false;
         handleCRUD('exp', 'edit', updated);
@@ -1427,6 +1449,8 @@ createApp({
       await nextTick();
       attachGestureListeners();
       loadData();
+      
+      // Try processing queue on load if online
       if(navigator.onLine) processSyncQueue();
     });
 
@@ -1445,15 +1469,15 @@ createApp({
       tripStatus, tripDates, selDate,
       itinerary, expandedId, toggleExpand,
       selectDate, getDayInfo, getEvents, getCategoryClass,
-      expenses, rates, members, uniqueExpDates, filteredExpenses, formatNumber, getAmountTWD,
+      expenses, rates, members, filterDate, uniqueExpDates, filteredExpenses, formatNumber, getAmountTWD,
       publicSpent, momSpent, debts,
       getItemTagClass,
       chartBusy,
       changeTabToAnalysis,
       showRateModal, showItinModal, showExpModal, showFilterModal, isEditing,
-      itinForm, newExp, editExpForm, tempRates, filterCriteria,
-      activeFilters, activeFilterCount, getFilterLabel, clearFilter, resetFilters,
-      uniqueLocations, uniquePayers, uniqueItems, uniquePayments,
+      itinForm, newExp, editExpForm, tempRates, filterCriteria, isFilterActive,
+      uniquePayers, uniqueLocations, uniquePayments, uniqueItems,
+      resetFilters,
       openRateModal, openAddItin, openEditItin, openEditExp,
       deleteItin, deleteExp, submitItin, submitExp, submitEditExp, saveRates, 
       confirmClearSync, toggleSelectAll, toggleSelectAllEdit, isItemPending
