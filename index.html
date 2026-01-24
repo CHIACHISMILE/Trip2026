@@ -18,6 +18,7 @@
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
   <style>
     /* CSS Setup */
@@ -208,6 +209,8 @@
     .modal-enter-from, .modal-leave-to { opacity: 0; }
     .modal-enter-active .modal-content, .modal-leave-active .modal-content { transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
     .modal-enter-from .modal-content, .modal-leave-to .modal-content { transform: scale(0.9) translateY(20px); }
+    
+    .filter-btn-active { background: #e0f2fe; color: #0284c7; border-color: #38bdf8; }
   </style>
 </head>
 
@@ -392,11 +395,24 @@
       </div>
 
       <div v-else-if="tab==='analysis'" key="analysis">
-        <div class="flex justify-end mb-3 swipe-protected">
+        <div class="flex justify-between items-center mb-3 swipe-protected">
+          <button @click="showFilterModal=true" 
+                  class="text-xs text-sky-600 bg-sky-50 border border-sky-100 px-4 py-2 rounded-full flex items-center gap-1 shadow-sm font-bold">
+            <span class="text-lg leading-none">⑆</span> 篩選
+          </button>
           <button @click="openRateModal"
                   class="text-xs text-slate-500 bg-white/50 border border-white px-4 py-2 rounded-full flex items-center shadow-sm backdrop-blur-sm font-bold">
             匯率設定
           </button>
+        </div>
+
+        <div v-if="activeFilterTags.length > 0" class="flex flex-wrap gap-2 mb-4">
+          <div v-for="(tag, idx) in activeFilterTags" :key="idx" 
+               class="bg-white border border-sky-100 text-sky-700 text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-2 shadow-sm">
+            {{ tag.label }}
+            <button @click="removeFilter(tag.key)" class="text-sky-300 hover:text-sky-500 font-black">✕</button>
+          </div>
+          <button @click="resetFilters" class="text-[10px] text-slate-400 underline decoration-dashed">清除全部</button>
         </div>
 
         <div class="bg-gradient-to-br from-[#3b82f6] to-[#6366f1] text-white rounded-3xl p-6 shadow-xl mb-6 relative overflow-hidden ring-1 ring-white/20">
@@ -429,33 +445,12 @@
           </div>
         </div>
 
-        <div class="mb-4">
-          <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide swipe-protected">
-            <select v-model="filters.date" class="glass-input px-3 py-1.5 rounded-lg text-xs text-slate-600 outline-none font-bold flex-shrink-0">
-              <option value="ALL">全部日期</option>
-              <option v-for="d in uniqueExpDates" :key="d" :value="d">{{ d }}</option>
-            </select>
-            <select v-model="filters.payer" class="glass-input px-3 py-1.5 rounded-lg text-xs text-slate-600 outline-none font-bold flex-shrink-0">
-              <option value="ALL">所有付款人</option>
-              <option v-for="p in uniquePayers" :key="p" :value="p">{{ p }}</option>
-            </select>
-            <select v-model="filters.location" class="glass-input px-3 py-1.5 rounded-lg text-xs text-slate-600 outline-none font-bold flex-shrink-0">
-              <option value="ALL">所有地點</option>
-              <option v-for="l in uniqueLocations" :key="l" :value="l">{{ l }}</option>
-            </select>
-            <select v-model="filters.item" class="glass-input px-3 py-1.5 rounded-lg text-xs text-slate-600 outline-none font-bold flex-shrink-0">
-              <option value="ALL">所有項目</option>
-              <option v-for="i in uniqueItems" :key="i" :value="i">{{ i }}</option>
-            </select>
-            <select v-model="filters.payment" class="glass-input px-3 py-1.5 rounded-lg text-xs text-slate-600 outline-none font-bold flex-shrink-0">
-              <option value="ALL">所有方式</option>
-              <option v-for="p in uniquePayments" :key="p" :value="p">{{ p }}</option>
-            </select>
-          </div>
+        <div class="flex justify-between items-center mb-4 swipe-protected">
+          <h3 class="font-bold text-slate-700 text-lg">消費明細</h3>
         </div>
 
         <div class="glass-card p-4 mb-6">
-          <div class="relative h-64 w-full">
+          <div class="relative h-72 w-full">
             <div v-if="chartBusy" class="absolute inset-0 flex items-center justify-center text-xs text-slate-400 font-bold">
               圖表載入中...
             </div>
@@ -523,12 +518,12 @@
   <Transition name="modal">
     <div v-if="showItinModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 swipe-protected">
       <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" @click="showItinModal=false"></div>
-      <div class="modal-content w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden relative z-10 flex flex-col max-h-[85vh]">
-        <div class="bg-slate-50 p-4 border-b flex justify-between items-center flex-shrink-0">
+      <div class="modal-content w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden relative z-10">
+        <div class="bg-slate-50 p-4 border-b flex justify-between items-center">
           <h3 class="font-bold text-slate-800">{{ isEditing ? '編輯行程' : '新增行程' }}</h3>
           <button @click="showItinModal=false" class="text-slate-400 p-2">✕</button>
         </div>
-        <div class="p-6 space-y-4 overflow-y-auto flex-1">
+        <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
           <div class="flex gap-3">
             <div class="w-1/2">
               <label class="text-[10px] font-bold text-slate-400 uppercase">開始時間</label>
@@ -566,9 +561,9 @@
             <textarea v-model="itinForm.note" rows="3" class="w-full glass-input p-3 rounded-xl mt-1 outline-none text-sm" placeholder="備註事項..."></textarea>
           </div>
         </div>
-        <div class="p-4 bg-slate-50 border-t flex gap-3 flex-shrink-0">
-          <button @click="showItinModal=false" class="flex-1 bg-slate-200 text-slate-600 py-3 rounded-xl font-bold">取消</button>
+        <div class="p-4 bg-slate-50 border-t flex gap-2">
           <button @click="submitItin" class="flex-1 btn-glacier py-3 rounded-xl font-bold shadow-lg">儲存行程</button>
+          <button @click="showItinModal=false" class="px-6 bg-slate-200 text-slate-500 rounded-xl font-bold">取消</button>
         </div>
       </div>
     </div>
@@ -637,6 +632,69 @@
   </Transition>
 
   <Transition name="modal">
+    <div v-if="showFilterModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 swipe-protected">
+      <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" @click="showFilterModal=false"></div>
+      <div class="modal-content w-full max-w-sm bg-white rounded-3xl shadow-2xl relative z-10 p-6 space-y-5 max-h-[85vh] overflow-y-auto">
+        <h3 class="font-bold text-slate-800 text-lg border-b pb-2">進階篩選</h3>
+        
+        <div>
+          <label class="text-xs font-bold text-slate-400 block mb-2">日期</label>
+          <select v-model="tempFilters.date" class="w-full glass-input p-2 rounded-lg text-sm font-bold">
+            <option value="">全部日期</option>
+            <option v-for="d in uniqueExpDates" :key="d" :value="d">{{d}}</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-slate-400 block mb-2">付款人</label>
+          <div class="flex flex-wrap gap-2">
+            <button v-for="p in ['家齊','亭穎','媽媽']" :key="p" @click="tempFilters.payer = tempFilters.payer===p ? '' : p"
+                    :class="['px-3 py-1.5 rounded-lg text-xs font-bold border transition', tempFilters.payer===p ? 'filter-btn-active' : 'bg-white border-slate-200 text-slate-500']">
+              {{p}}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-slate-400 block mb-2">地點</label>
+          <div class="flex flex-wrap gap-2">
+            <button v-for="l in ['台灣','杜拜','挪威','冰島','英國']" :key="l" @click="tempFilters.location = tempFilters.location===l ? '' : l"
+                    :class="['px-3 py-1.5 rounded-lg text-xs font-bold border transition', tempFilters.location===l ? 'filter-btn-active' : 'bg-white border-slate-200 text-slate-500']">
+              {{l}}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-slate-400 block mb-2">消費項目</label>
+          <div class="flex flex-wrap gap-2">
+            <button v-for="i in ['早餐','午餐','晚餐','零食','住宿','交通（機票）','交通（租車）','交通（停車費）','交通（油錢）','紀念品','門票','其他']" 
+                    :key="i" @click="tempFilters.item = tempFilters.item===i ? '' : i"
+                    :class="['px-3 py-1.5 rounded-lg text-xs font-bold border transition', tempFilters.item===i ? 'filter-btn-active' : 'bg-white border-slate-200 text-slate-500']">
+              {{i}}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-slate-400 block mb-2">付款方式</label>
+          <div class="flex flex-wrap gap-2">
+            <button v-for="pay in ['現金','信用卡-國泰','信用卡-永豐','信用卡-元大']" :key="pay" @click="tempFilters.payment = tempFilters.payment===pay ? '' : pay"
+                    :class="['px-3 py-1.5 rounded-lg text-xs font-bold border transition', tempFilters.payment===pay ? 'filter-btn-active' : 'bg-white border-slate-200 text-slate-500']">
+              {{pay}}
+            </button>
+          </div>
+        </div>
+
+        <div class="pt-2 flex gap-2">
+          <button @click="applyFilters" class="flex-1 btn-glacier py-3 rounded-xl font-bold">套用篩選</button>
+          <button @click="clearTempFilters" class="px-4 bg-slate-100 text-slate-500 rounded-xl font-bold">重置</button>
+        </div>
+      </div>
+    </div>
+  </Transition>
+
+  <Transition name="modal">
     <div v-if="showRateModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 swipe-protected">
       <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" @click="showRateModal=false"></div>
       <div class="modal-content w-full max-w-sm bg-white rounded-3xl shadow-2xl relative z-10 p-6">
@@ -684,6 +742,9 @@ async function callApi(action, data = null, method = 'GET') {
   }
 }
 
+// 註冊 Chart DataLabels
+Chart.register(ChartDataLabels);
+
 const { createApp, ref, computed, onMounted, nextTick, watch, onBeforeUnmount } = Vue;
 
 createApp({
@@ -694,10 +755,7 @@ createApp({
     const isPullRefreshing = ref(false);
     const isOnline = ref(navigator.onLine);
     
-    // Status Flags
     const isSyncing = ref(false);
-
-    // Sync Queue
     const syncQueue = ref([]);
     
     const members = ref([]);
@@ -710,9 +768,6 @@ createApp({
 
     const todayDate = ref('');
     const todayWeekday = ref('');
-
-    // NEW: Filter State
-    const filters = ref({ date: 'ALL', payer: 'ALL', location: 'ALL', item: 'ALL', payment: 'ALL' });
 
     const expandedId = ref(null);
     const toggleExpand = (id) => {
@@ -743,8 +798,11 @@ createApp({
       tripDates.push({ date: d.toISOString().split('T')[0], short: (d.getMonth()+1)+'/'+d.getDate() });
     }
     const selDate = ref(tripDates[0].date);
-    // Remove old filterDate, rely on filters object
-    const filterDate = ref('ALL'); 
+    
+    // Filters Logic
+    const showFilterModal = ref(false);
+    const activeFilters = ref({});
+    const tempFilters = ref({ date: '', payer: '', location: '', item: '', payment: '' });
 
     const showRateModal = ref(false);
     const showItinModal = ref(false);
@@ -809,36 +867,54 @@ createApp({
         gesture.dy = 0;
         gesture.startX = t.clientX;
         gesture.startY = t.clientY;
+        
         const w = window.innerWidth;
         const edgeThreshold = w * 0.15;
+        
         gesture.startedAtLeftEdge = (gesture.startX <= edgeThreshold);
         gesture.startedAtRightEdge = (gesture.startX >= w - edgeThreshold);
+
         gesture.inSelectable = !!e.target.closest('.allow-select');
         gesture.selectIntent = false;
         clearLongPress();
+
         if (gesture.inSelectable) {
           gesture.longPressTimer = setTimeout(() => {
             gesture.selectIntent = true;
           }, 220);
         }
+
         gesture.blocked = isBlockedTarget(e.target);
       };
 
       const onTouchMove = (e) => {
         if (!gesture.active) return;
         if (gesture.blocked) return;
+
         const t = e.touches[0];
         gesture.dx = t.clientX - gesture.startX;
         gesture.dy = t.clientY - gesture.startY;
         const absX = Math.abs(gesture.dx);
         const absY = Math.abs(gesture.dy);
+
         if (gesture.inSelectable && (gesture.selectIntent || hasTextSelection())) return;
-        if (gesture.inSelectable) { if (absX > 12 || absY > 12) clearLongPress(); }
-        if (!gesture.mode) { if (absX < 10 && absY < 10) return; gesture.mode = (absX > absY) ? 'h' : 'v'; }
+
+        if (gesture.inSelectable) {
+          if (absX > 12 || absY > 12) clearLongPress();
+        }
+
+        if (!gesture.mode) {
+          if (absX < 10 && absY < 10) return;
+          gesture.mode = (absX > absY) ? 'h' : 'v';
+        }
+
         if (gesture.mode === 'h') {
-          if ((gesture.startedAtLeftEdge || gesture.startedAtRightEdge) && e.cancelable) { e.preventDefault(); }
+          if ((gesture.startedAtLeftEdge || gesture.startedAtRightEdge) && e.cancelable) {
+             e.preventDefault();
+          }
           return;
         }
+
         if (gesture.mode === 'v') {
           const scroller = scrollContainer.value;
           const isTop = scroller ? scroller.scrollTop <= 0 : true;
@@ -853,12 +929,22 @@ createApp({
         if (!gesture.active) return;
         gesture.active = false;
         clearLongPress();
+
         if (gesture.inSelectable && (gesture.selectIntent || hasTextSelection())) {
-          pullDistance.value = 0; gesture.mode = null; return;
+          pullDistance.value = 0;
+          gesture.mode = null;
+          return;
         }
+
         if (pullDistance.value > 60) {
-          pullDistance.value = 60; isPullRefreshing.value = true; loadData(); return;
-        } else { pullDistance.value = 0; }
+          pullDistance.value = 60;
+          isPullRefreshing.value = true;
+          loadData();
+          return;
+        } else {
+          pullDistance.value = 0;
+        }
+
         if (gesture.mode === 'h') {
            const absX = Math.abs(gesture.dx);
            if (absX > 60) {
@@ -876,10 +962,14 @@ createApp({
              }
            }
         }
-        gesture.mode = null; gesture.inSelectable = false; gesture.selectIntent = false;
+
+        gesture.mode = null;
+        gesture.inSelectable = false;
+        gesture.selectIntent = false;
       };
 
       attachGestureListeners._handlers = { onTouchStart, onTouchMove, onTouchEnd };
+
       el.addEventListener('touchstart', onTouchStart, { passive: true });
       el.addEventListener('touchmove',  onTouchMove,  { passive: false });
       el.addEventListener('touchend',   onTouchEnd,   { passive: true });
@@ -899,7 +989,12 @@ createApp({
 
     const saveLocal = (data) => {
       try {
-        const toSave = { expenses: expenses.value, itinerary: itinerary.value, members: members.value, rates: rates.value };
+        const toSave = {
+           expenses: expenses.value,
+           itinerary: itinerary.value,
+           members: members.value,
+           rates: rates.value
+        };
         localStorage.setItem('tripData_v36', JSON.stringify(toSave));
         localStorage.setItem('syncQueue_v36', JSON.stringify(syncQueue.value));
       } catch(e){}
@@ -932,26 +1027,37 @@ createApp({
         itinerary.value = res.itinerary;
         members.value = res.members;
         rates.value = res.rates;
-        saveLocal({});
+        saveLocal({}); 
         if (tab.value === 'analysis') scheduleRenderChart();
       }
     };
 
     const processSyncQueue = async () => {
       if (syncQueue.value.length === 0 || !navigator.onLine || isSyncing.value) return;
+      
       isSyncing.value = true;
       const queue = [...syncQueue.value];
       const remaining = [];
+
       for (const job of queue) {
         try {
           const apiAction = getBackendActionName(job.type, job.action);
           const res = await callApi(apiAction, job.data, 'POST');
-          if (res) { updateLocalData(res); } else { remaining.push(job); }
-        } catch (e) { remaining.push(job); }
+          
+          if (res) {
+            updateLocalData(res);
+          } else {
+            remaining.push(job);
+          }
+        } catch (e) {
+          remaining.push(job);
+        }
       }
+
       syncQueue.value = remaining;
       saveLocal({});
       isSyncing.value = false;
+      
       if (syncQueue.value.length === 0) loadData();
     };
 
@@ -963,66 +1069,300 @@ createApp({
            const res = await callApi(apiAction, data, 'POST');
            if (!res) throw new Error("API Fail");
            updateLocalData(res);
-         } catch (e) { syncQueue.value.push({ type, action, data }); } finally { isSyncing.value = false; }
-       } else { syncQueue.value.push({ type, action, data }); }
+         } catch (e) {
+           syncQueue.value.push({ type, action, data });
+         } finally {
+           isSyncing.value = false;
+         }
+       } else {
+         syncQueue.value.push({ type, action, data });
+       }
        saveLocal({});
     };
 
     const loadData = async () => {
       if (!isPullRefreshing.value) isLoading.value = true;
+
       if (loadLocal()) {
-        if (isFirstLoad.value) { nextTick(() => checkAndScrollToToday()); isFirstLoad.value = false; }
+        if (isFirstLoad.value) {
+          nextTick(() => checkAndScrollToToday());
+          isFirstLoad.value = false;
+        }
         if (tab.value === 'analysis') scheduleRenderChart();
         setTimeout(() => { if (!isPullRefreshing.value) isLoading.value = false; }, 150);
       }
-      if (!navigator.onLine) { isLoading.value = false; isPullRefreshing.value = false; pullDistance.value = 0; return; }
-      try { const res = await callApi('getData'); updateLocalData(res); } catch(e) {} finally { isLoading.value = false; isPullRefreshing.value = false; pullDistance.value = 0; }
+
+      if (!navigator.onLine) {
+        isLoading.value = false;
+        isPullRefreshing.value = false;
+        pullDistance.value = 0;
+        return;
+      }
+
+      try {
+        const res = await callApi('getData');
+        updateLocalData(res);
+      } catch(e) {
+      } finally {
+        isLoading.value = false;
+        isPullRefreshing.value = false;
+        pullDistance.value = 0;
+      }
     };
 
     const selectDate = (date) => { selDate.value = date; scrollToDateBtn(date); };
-    const scrollToDateBtn = (date) => { nextTick(() => { const btn = document.getElementById('date-btn-' + date); if (btn && dateContainer.value) { const centerPos = (btn.offsetLeft - dateContainer.value.offsetLeft) - (dateContainer.value.clientWidth / 2) + (btn.clientWidth / 2); dateContainer.value.scrollTo({ left: centerPos, behavior: 'smooth' }); } }); };
-    const checkAndScrollToToday = () => { const d = new Date(); const offset = d.getTimezoneOffset() * 60000; const todayStr = new Date(d.getTime() - offset).toISOString().split('T')[0]; if (tripDates.some(x => x.date === todayStr)) selectDate(todayStr); else selectDate(tripDates[0].date); };
-    const switchDay = (direction) => { const idx = tripDates.findIndex(d => d.date === selDate.value); if (direction === 'next' && idx < tripDates.length - 1) selectDate(tripDates[idx + 1].date); if (direction === 'prev' && idx > 0) selectDate(tripDates[idx - 1].date); };
-    const getDayInfo = (dStr) => { const d = new Date(dStr); const diff = Math.ceil((d - startDate)/86400000) + 1; return `DAY ${diff} · ${['週日','週一','週二','週三','週四','週五','週六'][d.getDay()]}`; };
-    const getCategoryClass = (cat) => { switch(cat) { case '交通': return 'cat-traffic'; case '住宿': return 'cat-stay'; case '景點': return 'cat-spot'; case '飲食': return 'cat-food'; default: return 'cat-note'; } };
+
+    const scrollToDateBtn = (date) => {
+      nextTick(() => {
+        const btn = document.getElementById('date-btn-' + date);
+        if (btn && dateContainer.value) {
+          const centerPos = (btn.offsetLeft - dateContainer.value.offsetLeft) - (dateContainer.value.clientWidth / 2) + (btn.clientWidth / 2);
+          dateContainer.value.scrollTo({ left: centerPos, behavior: 'smooth' });
+        }
+      });
+    };
+
+    const checkAndScrollToToday = () => {
+      const d = new Date(); const offset = d.getTimezoneOffset() * 60000;
+      const todayStr = new Date(d.getTime() - offset).toISOString().split('T')[0];
+      if (tripDates.some(x => x.date === todayStr)) selectDate(todayStr);
+      else selectDate(tripDates[0].date);
+    };
+
+    const switchDay = (direction) => {
+      const idx = tripDates.findIndex(d => d.date === selDate.value);
+      if (direction === 'next' && idx < tripDates.length - 1) selectDate(tripDates[idx + 1].date);
+      if (direction === 'prev' && idx > 0) selectDate(tripDates[idx - 1].date);
+    };
+
+    const getDayInfo = (dStr) => {
+      const d = new Date(dStr);
+      const diff = Math.ceil((d - startDate)/86400000) + 1;
+      return `DAY ${diff} · ${['週日','週一','週二','週三','週四','週五','週六'][d.getDay()]}`;
+    };
+
+    const getCategoryClass = (cat) => {
+      switch(cat) {
+        case '交通': return 'cat-traffic';
+        case '住宿': return 'cat-stay';
+        case '景點': return 'cat-spot';
+        case '飲食': return 'cat-food';
+        default: return 'cat-note';
+      }
+    };
+
     const getEvents = (d) => itinerary.value.filter(e => e.date === d).sort((a,b)=>a.startTime.localeCompare(b.startTime));
     const formatNumber = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-    // NEW: Computed Properties for Filters
     const uniqueExpDates = computed(() => [...new Set(expenses.value.map(e => e.date))].sort());
-    const uniquePayers = computed(() => [...new Set(expenses.value.map(e => e.payer))].sort());
-    const uniqueLocations = computed(() => [...new Set(expenses.value.map(e => e.location))].sort());
-    const uniqueItems = computed(() => [...new Set(expenses.value.map(e => e.item))].sort());
-    const uniquePayments = computed(() => [...new Set(expenses.value.map(e => e.payment))].sort());
-
+    
+    // Filtered Expenses Logic
     const filteredExpenses = computed(() => {
-        return expenses.value.filter(e => {
-            if (filters.value.date !== 'ALL' && e.date !== filters.value.date) return false;
-            if (filters.value.payer !== 'ALL' && e.payer !== filters.value.payer) return false;
-            if (filters.value.location !== 'ALL' && e.location !== filters.value.location) return false;
-            if (filters.value.item !== 'ALL' && e.item !== filters.value.item) return false;
-            if (filters.value.payment !== 'ALL' && e.payment !== filters.value.payment) return false;
-            return true;
-        });
+      return expenses.value.filter(exp => {
+        const f = activeFilters.value;
+        if (f.date && exp.date !== f.date) return false;
+        if (f.payer && exp.payer !== f.payer) return false;
+        if (f.location && exp.location !== f.location) return false;
+        if (f.item && exp.item !== f.item) return false;
+        if (f.payment && exp.payment !== f.payment) return false;
+        return true;
+      });
     });
 
-    const getAmountTWD = (exp) => { if (exp.amountTWD && exp.amountTWD > 0) return exp.amountTWD; return Math.round(exp.amount * (rates.value[exp.currency] || 1)); };
-    const publicSpent = computed(() => { return expenses.value.reduce((sum, e) => { const amt = getAmountTWD(e); if (!e.involved || e.involved.length === 0) return sum; const perShare = amt / e.involved.length; let bill = 0; if (e.involved.includes('家齊')) bill += perShare; if (e.involved.includes('亭穎')) bill += perShare; return sum + bill; }, 0); });
-    const momSpent = computed(() => { return expenses.value.reduce((sum, e) => { const amt = getAmountTWD(e); if (e.involved && e.involved.includes('媽媽')) return sum + (amt / e.involved.length); return sum; }, 0); });
-    const debts = computed(() => { if (members.value.length === 0) return []; const bal = {}; members.value.forEach(m => bal[m] = 0); expenses.value.forEach(e => { const amt = getAmountTWD(e); const split = e.involved || []; if (split.length > 0) { bal[e.payer] += amt; const share = amt / split.length; split.forEach(p => { if (bal[p] !== undefined) bal[p] -= share; }); } }); let debtors=[], creditors=[]; for (const m in bal) { if (bal[m] < -1) debtors.push({p:m, a:bal[m]}); if (bal[m] > 1) creditors.push({p:m, a:bal[m]}); } debtors.sort((a,b)=>a.a-b.a); creditors.sort((a,b)=>b.a-a.a); const res=[]; let i=0, j=0; while(i<debtors.length && j<creditors.length){ const d=debtors[i], c=creditors[j]; const amt=Math.min(Math.abs(d.a), c.a); res.push({from:d.p, to:c.p, amount:Math.round(amt)}); d.a += amt; c.a -= amt; if (Math.abs(d.a)<1) i++; if (c.a<1) j++; } return res; });
-    const getItemTagClass = (item) => { const s = String(item || ''); if (s.includes('交通')) { if (s.includes('機票')) return 'tag-ticket'; return 'tag-traffic'; } if (s.includes('住宿')) return 'tag-stay'; if (['早餐','午餐','晚餐','零食'].some(k => s.includes(k))) return 'tag-food'; if (['紀念品'].some(k => s.includes(k))) return 'tag-shop'; return 'tag-other'; };
+    const activeFilterTags = computed(() => {
+      const tags = [];
+      const f = activeFilters.value;
+      if (f.date) tags.push({ key: 'date', label: f.date });
+      if (f.payer) tags.push({ key: 'payer', label: f.payer });
+      if (f.location) tags.push({ key: 'location', label: f.location });
+      if (f.item) tags.push({ key: 'item', label: f.item });
+      if (f.payment) tags.push({ key: 'payment', label: f.payment });
+      return tags;
+    });
+
+    const applyFilters = () => {
+      activeFilters.value = { ...tempFilters.value };
+      showFilterModal.value = false;
+    };
+
+    const clearTempFilters = () => {
+      tempFilters.value = { date: '', payer: '', location: '', item: '', payment: '' };
+    };
+
+    const resetFilters = () => {
+      activeFilters.value = {};
+      clearTempFilters();
+    };
+
+    const removeFilter = (key) => {
+      activeFilters.value[key] = '';
+      tempFilters.value[key] = '';
+    };
+
+    const getAmountTWD = (exp) => {
+      if (exp.amountTWD && exp.amountTWD > 0) return exp.amountTWD;
+      return Math.round(exp.amount * (rates.value[exp.currency] || 1));
+    };
+
+    const publicSpent = computed(() => {
+      return expenses.value.reduce((sum, e) => {
+        const amt = getAmountTWD(e);
+        if (!e.involved || e.involved.length === 0) return sum;
+        const perShare = amt / e.involved.length;
+        let bill = 0;
+        if (e.involved.includes('家齊')) bill += perShare;
+        if (e.involved.includes('亭穎')) bill += perShare;
+        return sum + bill;
+      }, 0);
+    });
+
+    const momSpent = computed(() => {
+      return expenses.value.reduce((sum, e) => {
+        const amt = getAmountTWD(e);
+        if (e.involved && e.involved.includes('媽媽')) return sum + (amt / e.involved.length);
+        return sum;
+      }, 0);
+    });
+
+    const debts = computed(() => {
+      if (members.value.length === 0) return [];
+      const bal = {}; members.value.forEach(m => bal[m] = 0);
+      expenses.value.forEach(e => {
+        const amt = getAmountTWD(e);
+        const split = e.involved || [];
+        if (split.length > 0) {
+          bal[e.payer] += amt;
+          const share = amt / split.length;
+          split.forEach(p => { if (bal[p] !== undefined) bal[p] -= share; });
+        }
+      });
+      let debtors=[], creditors=[];
+      for (const m in bal) {
+        if (bal[m] < -1) debtors.push({p:m, a:bal[m]});
+        if (bal[m] > 1) creditors.push({p:m, a:bal[m]});
+      }
+      debtors.sort((a,b)=>a.a-b.a);
+      creditors.sort((a,b)=>b.a-a.a);
+      const res=[]; let i=0, j=0;
+      while(i<debtors.length && j<creditors.length){
+        const d=debtors[i], c=creditors[j];
+        const amt=Math.min(Math.abs(d.a), c.a);
+        res.push({from:d.p, to:c.p, amount:Math.round(amt)});
+        d.a += amt; c.a -= amt;
+        if (Math.abs(d.a)<1) i++;
+        if (c.a<1) j++;
+      }
+      return res;
+    });
+
+    const getItemTagClass = (item) => {
+      const s = String(item || '');
+      if (s.includes('交通')) {
+        if (s.includes('機票')) return 'tag-ticket';
+        return 'tag-traffic';
+      }
+      if (s.includes('住宿')) return 'tag-stay';
+      if (['早餐','午餐','晚餐','零食'].some(k => s.includes(k))) return 'tag-food';
+      if (['紀念品'].some(k => s.includes(k))) return 'tag-shop';
+      return 'tag-other';
+    };
 
     /* Chart Logic */
     let chartInstance = null;
     const chartBusy = ref(false);
     let chartTimer = null;
-    const buildStats = () => { const stats = {}; const list = filteredExpenses.value; for (let i=0;i<list.length;i++){ const e = list[i]; const key = e.item || '其他'; stats[key] = (stats[key] || 0) + getAmountTWD(e); } return stats; };
-    const renderChart = () => { const canvas = document.getElementById('expenseChart'); if (!canvas) return; const stats = buildStats(); const labels = Object.keys(stats); const data = Object.values(stats); const nordicColors = ['#38bdf8', '#818cf8', '#c084fc', '#f472b6', '#fb7185', '#22d3ee', '#34d399', '#a78bfa', '#fbcfe8', '#e2e8f0']; if (chartInstance) { chartInstance.data.labels = labels; chartInstance.data.datasets[0].data = data; chartInstance.data.datasets[0].backgroundColor = labels.map((_,i)=>nordicColors[i % nordicColors.length]); chartInstance.update('none'); } else { chartInstance = new Chart(canvas, { type: 'doughnut', data: { labels, datasets: [{ data, backgroundColor: labels.map((_,i)=>nordicColors[i % nordicColors.length]), borderWidth: 0, hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', animation: { duration: 800 }, plugins: { legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11, weight: 'bold' }, color: '#64748b', usePointStyle: true, padding: 12, boxWidth: 8 } } } } }); } chartBusy.value = false; };
-    const scheduleRenderChart = async () => { if (tab.value !== 'analysis') return; chartBusy.value = true; if (chartTimer) clearTimeout(chartTimer); chartTimer = setTimeout(() => { nextTick(() => { renderChart(); }); }, 300); };
-    const changeTabToAnalysis = async () => { tab.value = 'analysis'; if (chartInstance) { chartInstance.destroy(); chartInstance = null; } scheduleRenderChart(); };
-    
-    // Watch filters deeply for chart updates
-    watch(filters, () => { if (tab.value === 'analysis') scheduleRenderChart(); }, { deep: true });
+
+    const buildStats = () => {
+      const stats = {};
+      const list = filteredExpenses.value;
+      for (let i=0;i<list.length;i++){
+        const e = list[i];
+        const key = e.item || '其他';
+        stats[key] = (stats[key] || 0) + getAmountTWD(e);
+      }
+      return stats;
+    };
+
+    const renderChart = () => {
+      const canvas = document.getElementById('expenseChart');
+      if (!canvas) return;
+
+      const stats = buildStats();
+      const labels = Object.keys(stats);
+      const data = Object.values(stats);
+      const total = data.reduce((a, b) => a + b, 0);
+
+      const nordicColors = ['#38bdf8', '#818cf8', '#c084fc', '#f472b6', '#fb7185', '#22d3ee', '#34d399', '#a78bfa', '#fbcfe8', '#e2e8f0'];
+
+      if (chartInstance) {
+        chartInstance.data.labels = labels;
+        chartInstance.data.datasets[0].data = data;
+        chartInstance.data.datasets[0].backgroundColor = labels.map((_,i)=>nordicColors[i % nordicColors.length]);
+        chartInstance.update('none');
+      } else {
+        chartInstance = new Chart(canvas, {
+          type: 'doughnut',
+          data: { labels, datasets: [{ data, backgroundColor: labels.map((_,i)=>nordicColors[i % nordicColors.length]), borderWidth: 0, hoverOffset: 4 }] },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '60%',
+            animation: { duration: 800 },
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: {
+                  font: { family: 'Inter', size: 11, weight: 'bold' },
+                  color: '#64748b',
+                  usePointStyle: true,
+                  padding: 12,
+                  boxWidth: 8
+                }
+              },
+              datalabels: {
+                color: '#fff',
+                font: { weight: 'bold', size: 10 },
+                formatter: (value, ctx) => {
+                  if (total === 0) return '';
+                  let percentage = (value * 100 / total).toFixed(1) + "%";
+                  // 只顯示佔比大於 5% 的標籤以避免重疊
+                  if (value * 100 / total < 5) return '';
+                  return percentage + '\n$' + formatNumber(value);
+                },
+                textAlign: 'center',
+                textShadowBlur: 2,
+                textShadowColor: 'rgba(0,0,0,0.3)'
+              }
+            }
+          }
+        });
+      }
+      chartBusy.value = false;
+    };
+
+    const scheduleRenderChart = async () => {
+      if (tab.value !== 'analysis') return;
+      chartBusy.value = true;
+
+      if (chartTimer) clearTimeout(chartTimer);
+      chartTimer = setTimeout(() => {
+        nextTick(() => {
+          renderChart();
+        });
+      }, 300);
+    };
+
+    const changeTabToAnalysis = async () => {
+      tab.value = 'analysis';
+      if (chartInstance) {
+        chartInstance.destroy();
+        chartInstance = null;
+      }
+      scheduleRenderChart();
+    };
+
+    // Watchers for Filter and Analysis Tab
+    watch([tab, activeFilters], () => { if (tab.value === 'analysis') scheduleRenderChart(); }, { deep: true });
     watch(expenses, () => { if (tab.value === 'analysis') scheduleRenderChart(); }, { deep: true });
 
     const openRateModal = () => { tempRates.value = { ...rates.value }; showRateModal.value = true; };
@@ -1030,47 +1370,118 @@ createApp({
     const openEditItin = (evt) => { itinForm.value = { ...evt }; isEditing.value = true; showItinModal.value = true; };
     const openEditExp = (exp) => { editExpForm.value = JSON.parse(JSON.stringify(exp)); showExpModal.value = true; };
     
+    // ===================================
+    // Actions
+    // ===================================
+
     const deleteItin = async (evt) => { 
       if(!confirm('確定刪除?')) return; 
+      
       itinerary.value = itinerary.value.filter(x => x.row !== evt.row); 
-      const pendingIdx = syncQueue.value.findIndex(job => job.type === 'itin' && job.action === 'add' && job.data.row === evt.row);
-      if (pendingIdx !== -1) { syncQueue.value.splice(pendingIdx, 1); saveLocal({}); } else { handleCRUD('itin', 'delete', { row: evt.row, sheetName: 'Itinerary' }); }
+      
+      const pendingIdx = syncQueue.value.findIndex(job => 
+        job.type === 'itin' && job.action === 'add' && job.data.row === evt.row
+      );
+
+      if (pendingIdx !== -1) {
+        syncQueue.value.splice(pendingIdx, 1);
+        saveLocal({});
+      } else {
+        handleCRUD('itin', 'delete', { row: evt.row, sheetName: 'Itinerary' });
+      }
     };
+
     const deleteExp = async (exp) => { 
       if(!confirm('確定刪除?')) return; 
       expenses.value = expenses.value.filter(x => x.row !== exp.row); 
-      const pendingIdx = syncQueue.value.findIndex(job => job.type === 'exp' && job.action === 'add' && job.data.row === exp.row);
-      if (pendingIdx !== -1) { syncQueue.value.splice(pendingIdx, 1); saveLocal({}); } else { handleCRUD('exp', 'delete', { row: exp.row, sheetName: 'Expenses' }); }
+      
+      const pendingIdx = syncQueue.value.findIndex(job => 
+        job.type === 'exp' && job.action === 'add' && job.data.row === exp.row
+      );
+
+      if (pendingIdx !== -1) {
+        syncQueue.value.splice(pendingIdx, 1);
+        saveLocal({});
+      } else {
+        handleCRUD('exp', 'delete', { row: exp.row, sheetName: 'Expenses' });
+      }
     };
+
     const submitItin = async () => {
       if(!itinForm.value.title) return alert('請輸入標題');
       const newRow = isEditing.value ? itinForm.value.row : Date.now();
       const payload = { ...itinForm.value, row: newRow, date: selDate.value };
-      if(isEditing.value) { const idx = itinerary.value.findIndex(x => x.row === newRow); if(idx !== -1) itinerary.value[idx] = payload; handleCRUD('itin', 'edit', payload); } else { itinerary.value.push(payload); handleCRUD('itin', 'add', payload); }
+      
+      if(isEditing.value) {
+         const idx = itinerary.value.findIndex(x => x.row === newRow);
+         if(idx !== -1) itinerary.value[idx] = payload;
+         handleCRUD('itin', 'edit', payload);
+      } else {
+         itinerary.value.push(payload);
+         handleCRUD('itin', 'add', payload);
+      }
       showItinModal.value = false;
     };
+
     const submitExp = async () => {
       if(!newExp.value.amount || !newExp.value.item) return alert('請輸入金額與項目');
-      const payload = { ...newExp.value, row: Date.now(), date: new Date().toISOString().split('T')[0], time: new Date().toTimeString().slice(0,5), amountTWD: Math.round(newExp.value.amount * (rates.value[newExp.value.currency] || 1)) };
-      expenses.value.unshift(payload); handleCRUD('exp', 'add', payload);
+      const payload = { 
+        ...newExp.value, 
+        row: Date.now(), 
+        date: new Date().toISOString().split('T')[0], 
+        time: new Date().toTimeString().slice(0,5),
+        amountTWD: Math.round(newExp.value.amount * (rates.value[newExp.value.currency] || 1))
+      };
+      
+      expenses.value.unshift(payload);
+      handleCRUD('exp', 'add', payload);
+      
       newExp.value.amount = null; newExp.value.item = ''; newExp.value.note = ''; newExp.value.involved = [];
       alert('記帳成功');
     };
+
     const submitEditExp = async () => {
         const idx = expenses.value.findIndex(e => e.row === editExpForm.value.row);
         if(idx === -1) return;
+        
         const updated = { ...editExpForm.value };
         updated.amountTWD = Math.round(updated.amount * (rates.value[updated.currency] || 1));
+        
         expenses.value[idx] = updated;
         showExpModal.value = false;
         handleCRUD('exp', 'edit', updated);
     };
-    const saveRates = () => { rates.value = { ...tempRates.value }; saveLocal({}); showRateModal.value = false; callApi('updateRates', rates.value, 'POST'); };
-    const confirmClearSync = () => { if(confirm('確定要強制清空所有待上傳資料嗎？\n注意：這會導致離線新增的資料無法同步到伺服器。')) { syncQueue.value = []; saveLocal({}); } };
+
+    const saveRates = () => {
+       rates.value = { ...tempRates.value };
+       saveLocal({});
+       showRateModal.value = false;
+       callApi('updateRates', rates.value, 'POST');
+    };
+
+    const confirmClearSync = () => { 
+      if(confirm('確定要強制清空所有待上傳資料嗎？\n注意：這會導致離線新增的資料無法同步到伺服器。')) {
+        syncQueue.value = []; 
+        saveLocal({});
+      }
+    };
+    
     const toggleSelectAll = () => { if(newExp.value.involved.length === members.value.length) newExp.value.involved=[]; else newExp.value.involved=[...members.value]; };
-    const toggleSelectAllEdit = () => { if(!editExpForm.value.involved) editExpForm.value.involved = []; if(editExpForm.value.involved.length === members.value.length) editExpForm.value.involved=[]; else editExpForm.value.involved=[...members.value]; };
-    const updateOnlineStatus = () => { isOnline.value = navigator.onLine; if (isOnline.value) processSyncQueue(); };
-    const isItemPending = (rowId) => { return syncQueue.value.some(job => job.data.row === rowId); };
+    
+    const toggleSelectAllEdit = () => { 
+        if(!editExpForm.value.involved) editExpForm.value.involved = [];
+        if(editExpForm.value.involved.length === members.value.length) editExpForm.value.involved=[]; 
+        else editExpForm.value.involved=[...members.value]; 
+    };
+
+    const updateOnlineStatus = () => { 
+      isOnline.value = navigator.onLine; 
+      if (isOnline.value) processSyncQueue();
+    };
+
+    const isItemPending = (rowId) => {
+      return syncQueue.value.some(job => job.data.row === rowId);
+    };
 
     onMounted(async () => {
       initDate();
@@ -1079,6 +1490,7 @@ createApp({
       await nextTick();
       attachGestureListeners();
       loadData();
+      
       if(navigator.onLine) processSyncQueue();
     });
 
@@ -1097,18 +1509,17 @@ createApp({
       tripStatus, tripDates, selDate,
       itinerary, expandedId, toggleExpand,
       selectDate, getDayInfo, getEvents, getCategoryClass,
-      expenses, rates, members, filters, // Export filters
-      uniqueExpDates, uniquePayers, uniqueLocations, uniqueItems, uniquePayments, filteredExpenses,
-      formatNumber, getAmountTWD,
+      expenses, rates, members, filterDate, uniqueExpDates, filteredExpenses, formatNumber, getAmountTWD,
       publicSpent, momSpent, debts,
       getItemTagClass,
       chartBusy,
       changeTabToAnalysis,
-      showRateModal, showItinModal, showExpModal, isEditing,
-      itinForm, newExp, editExpForm, tempRates,
+      showRateModal, showItinModal, showExpModal, showFilterModal, isEditing,
+      itinForm, newExp, editExpForm, tempRates, tempFilters, activeFilters, activeFilterTags,
       openRateModal, openAddItin, openEditItin, openEditExp,
       deleteItin, deleteExp, submitItin, submitExp, submitEditExp, saveRates, 
-      confirmClearSync, toggleSelectAll, toggleSelectAllEdit, isItemPending
+      confirmClearSync, toggleSelectAll, toggleSelectAllEdit, isItemPending,
+      applyFilters, resetFilters, clearTempFilters, removeFilter
     };
   }
 }).mount('#app');
