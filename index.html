@@ -172,11 +172,14 @@
     .cat-food    { border-left: 4px solid #f97316; background: white; }
     .cat-note    { border-left: 4px solid #64748b; background: white; }
 
+    /* Enhanced Selection Styles */
     .allow-select {
       user-select: text !important;
       -webkit-user-select: text !important;
       -webkit-touch-callout: default !important;
       cursor: text;
+      position: relative;
+      z-index: 2; /* Ensure it sits above background hits */
     }
     .allow-select::selection { background: rgba(56, 189, 248, 0.25); }
 
@@ -331,6 +334,7 @@
               <div
                 class="text-sm mt-3 text-slate-600 whitespace-pre-wrap opacity-90 allow-select break-anywhere"
                 :class="{'line-clamp-6': expandedId !== evt.row}"
+                @click.stop="handleTextClick(evt.row)"
                 v-if="evt.note"
               >{{ evt.note }}</div>
 
@@ -506,6 +510,7 @@
                 </span>
             </div>
         </div>
+
         <div class="glass-card p-4 mb-6">
           <div class="relative h-64 w-full">
             <div v-if="chartBusy" class="absolute inset-0 flex items-center justify-center text-xs text-slate-400 font-bold">
@@ -763,11 +768,27 @@ createApp({
     const todayDate = ref('');
     const todayWeekday = ref('');
 
+    const hasTextSelection = () => {
+      const sel = window.getSelection();
+      return !!(sel && sel.toString && sel.toString().length > 0);
+    };
+
     const expandedId = ref(null);
     const toggleExpand = (id) => {
-      const sel = window.getSelection();
-      if (sel && sel.toString().length > 0) return;
+      // Basic check, but handleTextClick is safer
+      if (hasTextSelection()) return;
       expandedId.value = (expandedId.value === id) ? null : id;
+    };
+    
+    // NEW: Dedicated handler for text clicks
+    const handleTextClick = (id) => {
+      if (hasTextSelection()) {
+        // If text is selected, do nothing.
+        // The @click.stop prevents the parent from seeing this click.
+        // This keeps the DOM stable and lets the native menu persist.
+        return;
+      }
+      toggleExpand(id);
     };
 
     const tripStatus = computed(() => {
@@ -835,11 +856,6 @@ createApp({
       longPressTimer:null
     };
 
-    const hasTextSelection = () => {
-      const sel = window.getSelection();
-      return !!(sel && sel.toString && sel.toString().length > 0);
-    };
-
     const isBlockedTarget = (target) => {
       if (target.closest('.swipe-protected')) return true;
       const tag = (target.tagName || '').toLowerCase();
@@ -897,6 +913,7 @@ createApp({
         const absX = Math.abs(gesture.dx);
         const absY = Math.abs(gesture.dy);
 
+        // Crucial Check: If selecting, stop gesture logic completely
         if (gesture.inSelectable && (gesture.selectIntent || hasTextSelection())) return;
 
         if (gesture.inSelectable) {
@@ -1474,7 +1491,7 @@ createApp({
       todayDate, todayWeekday,
       pullDistance, isPullRefreshing, refreshText,
       tripStatus, tripDates, selDate,
-      itinerary, expandedId, toggleExpand,
+      itinerary, expandedId, toggleExpand, handleTextClick,
       selectDate, getDayInfo, getEvents, getCategoryClass,
       expenses, rates, members, 
       filters, showFilterMenu, uniqueExpDates, uniqueItems, uniqueLocations, uniquePayments,
