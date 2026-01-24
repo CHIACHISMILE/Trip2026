@@ -192,6 +192,7 @@
     }
     @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
+    /* Pending / Sync Styles - Modified */
     .pending-sync { opacity: 0.85; border: 2px dashed #f59e0b !important; position: relative; }
     .pending-badge { display: none; }
 
@@ -203,28 +204,24 @@
     .tag-shop { background:#fdf2f8; color:#be185d; border:1px solid #fce7f3; }
     .tag-other { background:#f1f5f9; color:#334155; border:1px solid #e2e8f0; }
 
+    /* Filter Chip */
+    .filter-chip {
+        display: inline-flex; align-items: center; gap: 4px;
+        background: #e0f2fe; color: #0369a1;
+        padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: bold;
+        border: 1px solid #bae6fd;
+        margin-right: 4px; margin-bottom: 4px;
+    }
+    .filter-chip button {
+        opacity: 0.6; font-size: 14px; line-height: 1;
+    }
+    .filter-chip button:hover { opacity: 1; color: #ef4444; }
+
     /* Modal Styling */
     .modal-enter-active, .modal-leave-active { transition: opacity 0.3s ease; }
     .modal-enter-from, .modal-leave-to { opacity: 0; }
     .modal-enter-active .modal-content, .modal-leave-active .modal-content { transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
     .modal-enter-from .modal-content, .modal-leave-to .modal-content { transform: scale(0.9) translateY(20px); }
-    
-    /* Filter Chip Styling */
-    .filter-chip {
-        display: inline-flex;
-        align-items: center;
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 999px;
-        padding: 4px 10px;
-        font-size: 11px;
-        font-weight: 700;
-        color: #475569;
-        margin-right: 6px;
-        margin-bottom: 6px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    }
-    .filter-chip button { margin-left: 6px; color: #94a3b8; }
   </style>
 </head>
 
@@ -409,7 +406,7 @@
       </div>
 
       <div v-else-if="tab==='analysis'" key="analysis">
-        <div class="flex justify-end mb-3 swipe-protected gap-2">
+        <div class="flex justify-end mb-3 swipe-protected">
           <button @click="openRateModal"
                   class="text-xs text-slate-500 bg-white/50 border border-white px-4 py-2 rounded-full flex items-center shadow-sm backdrop-blur-sm font-bold">
             匯率設定
@@ -446,31 +443,31 @@
           </div>
         </div>
 
-        <div class="flex justify-between items-center mb-2 swipe-protected">
-          <h3 class="font-bold text-slate-700 text-lg">消費分析</h3>
-          <button @click="showFilterModal=true" class="glass-input px-3 py-1.5 rounded-lg text-xs text-slate-600 outline-none font-bold flex items-center gap-1 border border-slate-200">
-             <span>🔍 篩選</span>
-             <span v-if="activeFilterCount > 0" class="bg-sky-500 text-white w-4 h-4 rounded-full text-[9px] flex items-center justify-center">{{activeFilterCount}}</span>
+        <div class="flex justify-between items-center mb-4 swipe-protected">
+          <h3 class="font-bold text-slate-700 text-lg">消費明細</h3>
+          <button @click="showFilterModal=true" class="bg-white text-slate-600 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm">
+             <span>🔍 篩選條件</span>
+             <span v-if="activeFilterCount > 0" class="bg-sky-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center">{{activeFilterCount}}</span>
           </button>
         </div>
 
-        <div v-if="activeFilterCount > 0" class="flex flex-wrap mb-4 gap-1 swipe-protected">
-           <button v-for="loc in filterCriteria.locations" :key="loc" class="filter-chip" @click="removeFilter('locations', loc)">
-             {{loc}} <span class="ml-1">✕</span>
-           </button>
-           <button v-for="p in filterCriteria.payers" :key="p" class="filter-chip" @click="removeFilter('payers', p)">
-             {{p}} <span class="ml-1">✕</span>
-           </button>
-           <button v-for="pm in filterCriteria.payments" :key="pm" class="filter-chip" @click="removeFilter('payments', pm)">
-             {{pm}} <span class="ml-1">✕</span>
-           </button>
-           <button v-for="cat in filterCriteria.items" :key="cat" class="filter-chip" @click="removeFilter('items', cat)">
-             {{cat}} <span class="ml-1">✕</span>
-           </button>
-           <button v-for="d in filterCriteria.dates" :key="d" class="filter-chip" @click="removeFilter('dates', d)">
-             {{d}} <span class="ml-1">✕</span>
-           </button>
-           <button @click="resetFilters" class="text-[10px] text-sky-600 font-bold px-2 py-1">清除全部</button>
+        <div v-if="activeFilterCount > 0" class="flex flex-wrap gap-2 mb-4">
+            <span v-if="filterCriteria.date" class="filter-chip">
+                📅 {{filterCriteria.date}} <button @click="filterCriteria.date=''">✕</button>
+            </span>
+            <span v-if="filterCriteria.location" class="filter-chip">
+                📍 {{filterCriteria.location}} <button @click="filterCriteria.location=''">✕</button>
+            </span>
+            <span v-if="filterCriteria.payer" class="filter-chip">
+                👤 {{filterCriteria.payer}} <button @click="filterCriteria.payer=''">✕</button>
+            </span>
+            <span v-if="filterCriteria.payment" class="filter-chip">
+                💳 {{filterCriteria.payment}} <button @click="filterCriteria.payment=''">✕</button>
+            </span>
+            <span v-if="filterCriteria.category" class="filter-chip">
+                🏷️ {{filterCriteria.category}} <button @click="filterCriteria.category=''">✕</button>
+            </span>
+            <button @click="resetFilters" class="text-[10px] text-slate-400 font-bold underline ml-1">清除全部</button>
         </div>
 
         <div class="glass-card p-4 mb-6">
@@ -585,9 +582,9 @@
             <textarea v-model="itinForm.note" rows="3" class="w-full glass-input p-3 rounded-xl mt-1 outline-none text-sm" placeholder="備註事項..."></textarea>
           </div>
         </div>
-        <div class="p-4 bg-slate-50 border-t flex gap-2">
+        <div class="p-4 bg-slate-50 border-t flex gap-3">
+          <button @click="showItinModal=false" class="flex-1 bg-gray-100 text-slate-500 py-3 rounded-xl font-bold shadow-sm">取消</button>
           <button @click="submitItin" class="flex-1 btn-glacier py-3 rounded-xl font-bold shadow-lg">儲存行程</button>
-          <button @click="showItinModal=false" class="w-1/3 bg-slate-100 text-slate-500 rounded-xl font-bold shadow-sm">取消</button>
         </div>
       </div>
     </div>
@@ -658,68 +655,53 @@
   <Transition name="modal">
     <div v-if="showFilterModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 swipe-protected">
       <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" @click="showFilterModal=false"></div>
-      <div class="modal-content w-full max-w-sm bg-white rounded-3xl shadow-2xl relative z-10 p-6 flex flex-col max-h-[85vh]">
-        <div class="flex justify-between items-center mb-4 border-b pb-2">
-           <h3 class="font-bold text-slate-800 text-lg">進階篩選</h3>
-           <button @click="showFilterModal=false" class="text-slate-400">✕</button>
-        </div>
+      <div class="modal-content w-full max-w-sm bg-white rounded-3xl shadow-2xl relative z-10 p-6 space-y-4">
+        <h3 class="font-bold text-slate-800 text-lg flex justify-between items-center">
+            篩選條件
+            <button @click="resetFilters" class="text-xs text-red-500 font-bold bg-red-50 px-2 py-1 rounded border border-red-100">重置</button>
+        </h3>
         
-        <div class="flex-1 overflow-y-auto space-y-5 pr-2">
-           <div>
-             <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">地點</div>
-             <div class="flex flex-wrap gap-2">
-               <button v-for="opt in availableOptions.locations" :key="opt" @click="toggleFilter('locations', opt)"
-                       :class="['px-3 py-1.5 rounded-lg text-xs font-bold border transition', filterCriteria.locations.includes(opt) ? 'bg-sky-500 text-white border-sky-500' : 'bg-slate-50 text-slate-500 border-slate-200']">
-                 {{opt}}
-               </button>
-             </div>
-           </div>
-           
-           <div>
-             <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">付款人</div>
-             <div class="flex flex-wrap gap-2">
-               <button v-for="opt in availableOptions.payers" :key="opt" @click="toggleFilter('payers', opt)"
-                       :class="['px-3 py-1.5 rounded-lg text-xs font-bold border transition', filterCriteria.payers.includes(opt) ? 'bg-sky-500 text-white border-sky-500' : 'bg-slate-50 text-slate-500 border-slate-200']">
-                 {{opt}}
-               </button>
-             </div>
-           </div>
-
-           <div>
-             <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">消費類別</div>
-             <div class="flex flex-wrap gap-2">
-               <button v-for="opt in availableOptions.items" :key="opt" @click="toggleFilter('items', opt)"
-                       :class="['px-3 py-1.5 rounded-lg text-xs font-bold border transition', filterCriteria.items.includes(opt) ? 'bg-sky-500 text-white border-sky-500' : 'bg-slate-50 text-slate-500 border-slate-200']">
-                 {{opt}}
-               </button>
-             </div>
-           </div>
-
-           <div>
-             <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">付款方式</div>
-             <div class="flex flex-wrap gap-2">
-               <button v-for="opt in availableOptions.payments" :key="opt" @click="toggleFilter('payments', opt)"
-                       :class="['px-3 py-1.5 rounded-lg text-xs font-bold border transition', filterCriteria.payments.includes(opt) ? 'bg-sky-500 text-white border-sky-500' : 'bg-slate-50 text-slate-500 border-slate-200']">
-                 {{opt}}
-               </button>
-             </div>
-           </div>
-
-           <div>
-             <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">日期</div>
-             <div class="flex flex-wrap gap-2">
-               <button v-for="opt in availableOptions.dates" :key="opt" @click="toggleFilter('dates', opt)"
-                       :class="['px-3 py-1.5 rounded-lg text-xs font-bold border transition', filterCriteria.dates.includes(opt) ? 'bg-sky-500 text-white border-sky-500' : 'bg-slate-50 text-slate-500 border-slate-200']">
-                 {{opt}}
-               </button>
-             </div>
-           </div>
+        <div class="space-y-3">
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase">日期</label>
+                <select v-model="filterCriteria.date" class="w-full glass-input p-2 rounded-lg text-sm font-bold">
+                    <option value="">全部日期</option>
+                    <option v-for="d in uniqueExpDates" :key="d" :value="d">{{ d }}</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase">地點</label>
+                <select v-model="filterCriteria.location" class="w-full glass-input p-2 rounded-lg text-sm font-bold">
+                    <option value="">全部地點</option>
+                    <option v-for="l in uniqueLocations" :key="l" :value="l">{{ l }}</option>
+                </select>
+            </div>
+            <div class="flex gap-3">
+                <div class="flex-1">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase">付款人</label>
+                    <select v-model="filterCriteria.payer" class="w-full glass-input p-2 rounded-lg text-sm font-bold">
+                        <option value="">全部</option>
+                        <option v-for="p in uniquePayers" :key="p" :value="p">{{ p }}</option>
+                    </select>
+                </div>
+                <div class="flex-1">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase">方式</label>
+                    <select v-model="filterCriteria.payment" class="w-full glass-input p-2 rounded-lg text-sm font-bold">
+                        <option value="">全部</option>
+                        <option v-for="p in uniquePayments" :key="p" :value="p">{{ p }}</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase">類別</label>
+                <select v-model="filterCriteria.category" class="w-full glass-input p-2 rounded-lg text-sm font-bold">
+                    <option value="">全部類別</option>
+                    <option v-for="c in uniqueCategories" :key="c" :value="c">{{ c }}</option>
+                </select>
+            </div>
         </div>
 
-        <div class="pt-4 mt-2 border-t flex gap-2">
-           <button @click="resetFilters" class="w-1/3 bg-slate-100 text-slate-500 rounded-xl font-bold py-3">重置</button>
-           <button @click="showFilterModal=false" class="flex-1 btn-glacier rounded-xl font-bold py-3">確認篩選</button>
-        </div>
+        <button @click="showFilterModal=false" class="w-full btn-glacier py-3 rounded-xl font-bold mt-4">查看結果</button>
       </div>
     </div>
   </Transition>
@@ -745,14 +727,14 @@
 <script>
 const YOUR_GAS_URL = 'https://script.google.com/macros/s/AKfycbz6PZtqLJzlS2a71R-RfZjpJCuqJVPoP7RuNxEe74mS_uvxBejMNGKboFSn2ArNnXAu/exec';
 
+// Register Chart DataLabels
+Chart.register(ChartDataLabels);
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js').catch(()=>{});
   });
 }
-
-// Chart.js Plugin Registration
-Chart.register(ChartDataLabels);
 
 async function callApi(action, data = null, method = 'GET') {
   const options = { method };
@@ -784,7 +766,11 @@ createApp({
     const isFirstLoad = ref(true);
     const isPullRefreshing = ref(false);
     const isOnline = ref(navigator.onLine);
+    
+    // Status Flags
     const isSyncing = ref(false);
+
+    // Sync Queue
     const syncQueue = ref([]);
     
     const members = ref([]);
@@ -798,6 +784,43 @@ createApp({
     const todayDate = ref('');
     const todayWeekday = ref('');
 
+    // Filter Logic
+    const showFilterModal = ref(false);
+    const filterCriteria = ref({ date: '', location: '', payer: '', payment: '', category: '' });
+
+    const activeFilterCount = computed(() => {
+        let count = 0;
+        if(filterCriteria.value.date) count++;
+        if(filterCriteria.value.location) count++;
+        if(filterCriteria.value.payer) count++;
+        if(filterCriteria.value.payment) count++;
+        if(filterCriteria.value.category) count++;
+        return count;
+    });
+
+    const resetFilters = () => {
+        filterCriteria.value = { date: '', location: '', payer: '', payment: '', category: '' };
+    };
+
+    // Derived Lists for Filters
+    const uniqueExpDates = computed(() => [...new Set(expenses.value.map(e => e.date))].sort());
+    const uniqueLocations = computed(() => [...new Set(expenses.value.map(e => e.location || '未知'))].sort());
+    const uniquePayers = computed(() => [...new Set(expenses.value.map(e => e.payer))].sort());
+    const uniquePayments = computed(() => [...new Set(expenses.value.map(e => e.payment))].sort());
+    const uniqueCategories = computed(() => [...new Set(expenses.value.map(e => e.item))].sort()); // Simplified category as item name or logic
+
+    // Apply Filters
+    const filteredExpenses = computed(() => {
+        return expenses.value.filter(e => {
+            if(filterCriteria.value.date && e.date !== filterCriteria.value.date) return false;
+            if(filterCriteria.value.location && e.location !== filterCriteria.value.location) return false;
+            if(filterCriteria.value.payer && e.payer !== filterCriteria.value.payer) return false;
+            if(filterCriteria.value.payment && e.payment !== filterCriteria.value.payment) return false;
+            if(filterCriteria.value.category && e.item !== filterCriteria.value.category) return false;
+            return true;
+        });
+    });
+
     const expandedId = ref(null);
     const toggleExpand = (id) => {
       const sel = window.getSelection();
@@ -810,11 +833,14 @@ createApp({
       const start = new Date('2026-08-30');
       const end = new Date('2026-09-26');
       now.setHours(0,0,0,0); start.setHours(0,0,0,0); end.setHours(0,0,0,0);
+      
       if (now < start) return `倒數 ${Math.ceil((start - now)/86400000)} 天`;
+      
       if (now >= start && now <= end) {
          const diff = Math.floor((now - start)/86400000) + 1;
          return `DAY ${diff}`;
       }
+      
       return '';
     });
 
@@ -825,10 +851,7 @@ createApp({
     }
     const selDate = ref(tripDates[0].date);
     
-    // Filter System
-    const showFilterModal = ref(false);
-    const filterCriteria = ref({ locations: [], payers: [], payments: [], dates: [], items: [] });
-    // Legacy filterDate replaced by complex filter logic, but we map 'ALL' concept to empty arrays
+    // Kept filterDate ref for compatibility if needed, but primary is now filterCriteria
     const filterDate = ref('ALL'); 
 
     const showRateModal = ref(false);
@@ -852,112 +875,151 @@ createApp({
       todayWeekday.value = days[now.getDay()];
     };
 
-    /* Filter Logic */
-    const uniqueExpDates = computed(() => [...new Set(expenses.value.map(e => e.date))].sort());
-    
-    const availableOptions = computed(() => {
-        const getOpts = (key) => [...new Set(expenses.value.map(e => e[key]).filter(Boolean))].sort();
-        return {
-            locations: [...new Set([...getOpts('location'), '台灣','杜拜','挪威','冰島','英國'])],
-            payers: getOpts('payer'),
-            items: [...new Set([...getOpts('item'), '早餐','午餐','晚餐','零食','住宿','交通（機票）','交通（租車）','交通（停車費）','交通（油錢）','紀念品','門票','其他'])],
-            payments: getOpts('payment'),
-            dates: uniqueExpDates.value
-        };
-    });
-
-    const activeFilterCount = computed(() => {
-        let c = 0;
-        for(let k in filterCriteria.value) c += filterCriteria.value[k].length;
-        return c;
-    });
-
-    const toggleFilter = (cat, val) => {
-        const idx = filterCriteria.value[cat].indexOf(val);
-        if(idx > -1) filterCriteria.value[cat].splice(idx, 1);
-        else filterCriteria.value[cat].push(val);
-    };
-
-    const removeFilter = (cat, val) => toggleFilter(cat, val);
-    const resetFilters = () => {
-        filterCriteria.value = { locations: [], payers: [], payments: [], dates: [], items: [] };
-    };
-
-    const filteredExpenses = computed(() => {
-        const fc = filterCriteria.value;
-        if (activeFilterCount.value === 0) return expenses.value;
-        
-        return expenses.value.filter(e => {
-            if (fc.locations.length && !fc.locations.includes(e.location)) return false;
-            if (fc.payers.length && !fc.payers.includes(e.payer)) return false;
-            if (fc.payments.length && !fc.payments.includes(e.payment)) return false;
-            if (fc.dates.length && !fc.dates.includes(e.date)) return false;
-            if (fc.items.length && !fc.items.includes(e.item)) return false;
-            return true;
-        });
-    });
-
     /* iOS Gesture Engine */
     const gesture = {
-      active:false, mode:null, startX:0, startY:0, dx:0, dy:0,
-      startedAtLeftEdge:false, startedAtRightEdge:false,
-      inSelectable:false, selectIntent:false, longPressTimer:null
+      active:false, mode:null,
+      startX:0, startY:0, dx:0, dy:0,
+      startedAtLeftEdge:false,
+      startedAtRightEdge:false,
+      inSelectable:false,
+      selectIntent:false,
+      longPressTimer:null
     };
 
-    const hasTextSelection = () => { const sel = window.getSelection(); return !!(sel && sel.toString && sel.toString().length > 0); };
+    const hasTextSelection = () => {
+      const sel = window.getSelection();
+      return !!(sel && sel.toString && sel.toString().length > 0);
+    };
+
     const isBlockedTarget = (target) => {
       if (target.closest('.swipe-protected')) return true;
       const tag = (target.tagName || '').toLowerCase();
-      return ['input','textarea','select','button','a','label'].includes(tag);
+      if (['input','textarea','select','button','a','label'].includes(tag)) return true;
+      return false;
     };
-    const clearLongPress = () => { if (gesture.longPressTimer) { clearTimeout(gesture.longPressTimer); gesture.longPressTimer = null; } };
+
+    const clearLongPress = () => {
+      if (gesture.longPressTimer) {
+        clearTimeout(gesture.longPressTimer);
+        gesture.longPressTimer = null;
+      }
+    };
 
     const attachGestureListeners = () => {
       const el = scrollContainer.value;
       if (!el) return;
+
       const onTouchStart = (e) => {
         const t = e.touches[0];
-        gesture.active = true; gesture.mode = null; gesture.dx = 0; gesture.dy = 0;
-        gesture.startX = t.clientX; gesture.startY = t.clientY;
-        const w = window.innerWidth; const edgeThreshold = w * 0.15;
+        gesture.active = true;
+        gesture.mode = null;
+        gesture.dx = 0;
+        gesture.dy = 0;
+        gesture.startX = t.clientX;
+        gesture.startY = t.clientY;
+        
+        const w = window.innerWidth;
+        const edgeThreshold = w * 0.15;
+        
         gesture.startedAtLeftEdge = (gesture.startX <= edgeThreshold);
         gesture.startedAtRightEdge = (gesture.startX >= w - edgeThreshold);
+
         gesture.inSelectable = !!e.target.closest('.allow-select');
         gesture.selectIntent = false;
         clearLongPress();
-        if (gesture.inSelectable) gesture.longPressTimer = setTimeout(() => { gesture.selectIntent = true; }, 220);
+
+        if (gesture.inSelectable) {
+          gesture.longPressTimer = setTimeout(() => {
+            gesture.selectIntent = true;
+          }, 220);
+        }
+
         gesture.blocked = isBlockedTarget(e.target);
       };
+
       const onTouchMove = (e) => {
-        if (!gesture.active || gesture.blocked) return;
+        if (!gesture.active) return;
+        if (gesture.blocked) return;
+
         const t = e.touches[0];
-        gesture.dx = t.clientX - gesture.startX; gesture.dy = t.clientY - gesture.startY;
-        const absX = Math.abs(gesture.dx); const absY = Math.abs(gesture.dy);
+        gesture.dx = t.clientX - gesture.startX;
+        gesture.dy = t.clientY - gesture.startY;
+        const absX = Math.abs(gesture.dx);
+        const absY = Math.abs(gesture.dy);
+
         if (gesture.inSelectable && (gesture.selectIntent || hasTextSelection())) return;
-        if (gesture.inSelectable && (absX > 12 || absY > 12)) clearLongPress();
-        if (!gesture.mode) { if (absX < 10 && absY < 10) return; gesture.mode = (absX > absY) ? 'h' : 'v'; }
-        if (gesture.mode === 'h') { if ((gesture.startedAtLeftEdge || gesture.startedAtRightEdge) && e.cancelable) e.preventDefault(); return; }
+
+        if (gesture.inSelectable) {
+          if (absX > 12 || absY > 12) clearLongPress();
+        }
+
+        if (!gesture.mode) {
+          if (absX < 10 && absY < 10) return;
+          gesture.mode = (absX > absY) ? 'h' : 'v';
+        }
+
+        if (gesture.mode === 'h') {
+          if ((gesture.startedAtLeftEdge || gesture.startedAtRightEdge) && e.cancelable) {
+             e.preventDefault();
+          }
+          return;
+        }
+
         if (gesture.mode === 'v') {
-          const scroller = scrollContainer.value; const isTop = scroller ? scroller.scrollTop <= 0 : true;
-          if (isTop && gesture.dy > 0) { if (e.cancelable) e.preventDefault(); pullDistance.value = Math.min(72, Math.pow(gesture.dy, 0.7)); }
+          const scroller = scrollContainer.value;
+          const isTop = scroller ? scroller.scrollTop <= 0 : true;
+          if (isTop && gesture.dy > 0) {
+            if (e.cancelable) e.preventDefault();
+            pullDistance.value = Math.min(72, Math.pow(gesture.dy, 0.7));
+          }
         }
       };
+
       const onTouchEnd = () => {
         if (!gesture.active) return;
-        gesture.active = false; clearLongPress();
-        if (gesture.inSelectable && (gesture.selectIntent || hasTextSelection())) { pullDistance.value = 0; gesture.mode = null; return; }
-        if (pullDistance.value > 60) { pullDistance.value = 60; isPullRefreshing.value = true; loadData(); return; } else { pullDistance.value = 0; }
+        gesture.active = false;
+        clearLongPress();
+
+        if (gesture.inSelectable && (gesture.selectIntent || hasTextSelection())) {
+          pullDistance.value = 0;
+          gesture.mode = null;
+          return;
+        }
+
+        if (pullDistance.value > 60) {
+          pullDistance.value = 60;
+          isPullRefreshing.value = true;
+          loadData();
+          return;
+        } else {
+          pullDistance.value = 0;
+        }
+
         if (gesture.mode === 'h') {
            const absX = Math.abs(gesture.dx);
            if (absX > 60) {
-             if (gesture.startedAtLeftEdge && gesture.dx > 0) { if (tab.value === 'expense') tab.value = 'itinerary'; else if (tab.value === 'analysis') tab.value = 'expense'; }
-             else if (gesture.startedAtRightEdge && gesture.dx < 0) { if (tab.value === 'itinerary') tab.value = 'expense'; else if (tab.value === 'expense') changeTabToAnalysis(); }
-             else if (tab.value === 'itinerary' && !gesture.startedAtLeftEdge && !gesture.startedAtRightEdge) { if (gesture.dx < 0) switchDay('next'); else switchDay('prev'); }
+             if (gesture.startedAtLeftEdge && gesture.dx > 0) {
+                if (tab.value === 'expense') tab.value = 'itinerary';
+                else if (tab.value === 'analysis') tab.value = 'expense';
+             }
+             else if (gesture.startedAtRightEdge && gesture.dx < 0) {
+                if (tab.value === 'itinerary') tab.value = 'expense';
+                else if (tab.value === 'expense') changeTabToAnalysis();
+             }
+             else if (tab.value === 'itinerary' && !gesture.startedAtLeftEdge && !gesture.startedAtRightEdge) {
+                if (gesture.dx < 0) switchDay('next');
+                else switchDay('prev');
+             }
            }
         }
-        gesture.mode = null; gesture.inSelectable = false; gesture.selectIntent = false;
+
+        gesture.mode = null;
+        gesture.inSelectable = false;
+        gesture.selectIntent = false;
       };
+
       attachGestureListeners._handlers = { onTouchStart, onTouchMove, onTouchEnd };
+
       el.addEventListener('touchstart', onTouchStart, { passive: true });
       el.addEventListener('touchmove',  onTouchMove,  { passive: false });
       el.addEventListener('touchend',   onTouchEnd,   { passive: true });
@@ -965,16 +1027,24 @@ createApp({
     };
 
     const detachGestureListeners = () => {
-      const el = scrollContainer.value; const h = attachGestureListeners._handlers;
+      const el = scrollContainer.value;
+      const h = attachGestureListeners._handlers;
       if (!el || !h) return;
-      el.removeEventListener('touchstart', h.onTouchStart); el.removeEventListener('touchmove', h.onTouchMove);
-      el.removeEventListener('touchend', h.onTouchEnd); el.removeEventListener('touchcancel', h.onTouchEnd);
+      el.removeEventListener('touchstart', h.onTouchStart);
+      el.removeEventListener('touchmove', h.onTouchMove);
+      el.removeEventListener('touchend', h.onTouchEnd);
+      el.removeEventListener('touchcancel', h.onTouchEnd);
       attachGestureListeners._handlers = null;
     };
 
     const saveLocal = (data) => {
       try {
-        const toSave = { expenses: expenses.value, itinerary: itinerary.value, members: members.value, rates: rates.value };
+        const toSave = {
+           expenses: expenses.value,
+           itinerary: itinerary.value,
+           members: members.value,
+           rates: rates.value
+        };
         localStorage.setItem('tripData_v36', JSON.stringify(toSave));
         localStorage.setItem('syncQueue_v36', JSON.stringify(syncQueue.value));
       } catch(e){}
@@ -1003,25 +1073,41 @@ createApp({
 
     const updateLocalData = (res) => {
       if (res && res.expenses) {
-        expenses.value = res.expenses; itinerary.value = res.itinerary;
-        members.value = res.members; rates.value = res.rates;
-        saveLocal({});
+        expenses.value = res.expenses;
+        itinerary.value = res.itinerary;
+        members.value = res.members;
+        rates.value = res.rates;
+        saveLocal({}); 
         if (tab.value === 'analysis') scheduleRenderChart();
       }
     };
 
     const processSyncQueue = async () => {
       if (syncQueue.value.length === 0 || !navigator.onLine || isSyncing.value) return;
+      
       isSyncing.value = true;
-      const queue = [...syncQueue.value]; const remaining = [];
+      const queue = [...syncQueue.value];
+      const remaining = [];
+
       for (const job of queue) {
         try {
           const apiAction = getBackendActionName(job.type, job.action);
           const res = await callApi(apiAction, job.data, 'POST');
-          if (res) updateLocalData(res); else remaining.push(job);
-        } catch (e) { remaining.push(job); }
+          
+          if (res) {
+            updateLocalData(res);
+          } else {
+            remaining.push(job);
+          }
+        } catch (e) {
+          remaining.push(job);
+        }
       }
-      syncQueue.value = remaining; saveLocal({}); isSyncing.value = false;
+
+      syncQueue.value = remaining;
+      saveLocal({});
+      isSyncing.value = false;
+      
       if (syncQueue.value.length === 0) loadData();
     };
 
@@ -1033,23 +1119,49 @@ createApp({
            const res = await callApi(apiAction, data, 'POST');
            if (!res) throw new Error("API Fail");
            updateLocalData(res);
-         } catch (e) { syncQueue.value.push({ type, action, data }); } finally { isSyncing.value = false; }
-       } else { syncQueue.value.push({ type, action, data }); }
+         } catch (e) {
+           syncQueue.value.push({ type, action, data });
+         } finally {
+           isSyncing.value = false;
+         }
+       } else {
+         syncQueue.value.push({ type, action, data });
+       }
        saveLocal({});
     };
 
     const loadData = async () => {
       if (!isPullRefreshing.value) isLoading.value = true;
+
       if (loadLocal()) {
-        if (isFirstLoad.value) { nextTick(() => checkAndScrollToToday()); isFirstLoad.value = false; }
+        if (isFirstLoad.value) {
+          nextTick(() => checkAndScrollToToday());
+          isFirstLoad.value = false;
+        }
         if (tab.value === 'analysis') scheduleRenderChart();
         setTimeout(() => { if (!isPullRefreshing.value) isLoading.value = false; }, 150);
       }
-      if (!navigator.onLine) { isLoading.value = false; isPullRefreshing.value = false; pullDistance.value = 0; return; }
-      try { const res = await callApi('getData'); updateLocalData(res); } catch(e) {} finally { isLoading.value = false; isPullRefreshing.value = false; pullDistance.value = 0; }
+
+      if (!navigator.onLine) {
+        isLoading.value = false;
+        isPullRefreshing.value = false;
+        pullDistance.value = 0;
+        return;
+      }
+
+      try {
+        const res = await callApi('getData');
+        updateLocalData(res);
+      } catch(e) {
+      } finally {
+        isLoading.value = false;
+        isPullRefreshing.value = false;
+        pullDistance.value = 0;
+      }
     };
 
     const selectDate = (date) => { selDate.value = date; scrollToDateBtn(date); };
+
     const scrollToDateBtn = (date) => {
       nextTick(() => {
         const btn = document.getElementById('date-btn-' + date);
@@ -1063,7 +1175,8 @@ createApp({
     const checkAndScrollToToday = () => {
       const d = new Date(); const offset = d.getTimezoneOffset() * 60000;
       const todayStr = new Date(d.getTime() - offset).toISOString().split('T')[0];
-      if (tripDates.some(x => x.date === todayStr)) selectDate(todayStr); else selectDate(tripDates[0].date);
+      if (tripDates.some(x => x.date === todayStr)) selectDate(todayStr);
+      else selectDate(tripDates[0].date);
     };
 
     const switchDay = (direction) => {
@@ -1073,13 +1186,18 @@ createApp({
     };
 
     const getDayInfo = (dStr) => {
-      const d = new Date(dStr); const diff = Math.ceil((d - startDate)/86400000) + 1;
+      const d = new Date(dStr);
+      const diff = Math.ceil((d - startDate)/86400000) + 1;
       return `DAY ${diff} · ${['週日','週一','週二','週三','週四','週五','週六'][d.getDay()]}`;
     };
 
     const getCategoryClass = (cat) => {
       switch(cat) {
-        case '交通': return 'cat-traffic'; case '住宿': return 'cat-stay'; case '景點': return 'cat-spot'; case '飲食': return 'cat-food'; default: return 'cat-note';
+        case '交通': return 'cat-traffic';
+        case '住宿': return 'cat-stay';
+        case '景點': return 'cat-spot';
+        case '飲食': return 'cat-food';
+        default: return 'cat-note';
       }
     };
 
@@ -1091,59 +1209,93 @@ createApp({
       return Math.round(exp.amount * (rates.value[exp.currency] || 1));
     };
 
-    const publicSpent = computed(() => expenses.value.reduce((sum, e) => {
-      const amt = getAmountTWD(e); if (!e.involved || e.involved.length === 0) return sum;
-      const perShare = amt / e.involved.length; let bill = 0;
-      if (e.involved.includes('家齊')) bill += perShare; if (e.involved.includes('亭穎')) bill += perShare;
-      return sum + bill;
-    }, 0));
+    const publicSpent = computed(() => {
+      return expenses.value.reduce((sum, e) => {
+        const amt = getAmountTWD(e);
+        if (!e.involved || e.involved.length === 0) return sum;
+        const perShare = amt / e.involved.length;
+        let bill = 0;
+        if (e.involved.includes('家齊')) bill += perShare;
+        if (e.involved.includes('亭穎')) bill += perShare;
+        return sum + bill;
+      }, 0);
+    });
 
-    const momSpent = computed(() => expenses.value.reduce((sum, e) => {
-      const amt = getAmountTWD(e); if (e.involved && e.involved.includes('媽媽')) return sum + (amt / e.involved.length); return sum;
-    }, 0));
+    const momSpent = computed(() => {
+      return expenses.value.reduce((sum, e) => {
+        const amt = getAmountTWD(e);
+        if (e.involved && e.involved.includes('媽媽')) return sum + (amt / e.involved.length);
+        return sum;
+      }, 0);
+    });
 
     const debts = computed(() => {
       if (members.value.length === 0) return [];
       const bal = {}; members.value.forEach(m => bal[m] = 0);
       expenses.value.forEach(e => {
-        const amt = getAmountTWD(e); const split = e.involved || [];
-        if (split.length > 0) { bal[e.payer] += amt; const share = amt / split.length; split.forEach(p => { if (bal[p] !== undefined) bal[p] -= share; }); }
+        const amt = getAmountTWD(e);
+        const split = e.involved || [];
+        if (split.length > 0) {
+          bal[e.payer] += amt;
+          const share = amt / split.length;
+          split.forEach(p => { if (bal[p] !== undefined) bal[p] -= share; });
+        }
       });
       let debtors=[], creditors=[];
-      for (const m in bal) { if (bal[m] < -1) debtors.push({p:m, a:bal[m]}); if (bal[m] > 1) creditors.push({p:m, a:bal[m]}); }
-      debtors.sort((a,b)=>a.a-b.a); creditors.sort((a,b)=>b.a-a.a);
+      for (const m in bal) {
+        if (bal[m] < -1) debtors.push({p:m, a:bal[m]});
+        if (bal[m] > 1) creditors.push({p:m, a:bal[m]});
+      }
+      debtors.sort((a,b)=>a.a-b.a);
+      creditors.sort((a,b)=>b.a-a.a);
       const res=[]; let i=0, j=0;
       while(i<debtors.length && j<creditors.length){
-        const d=debtors[i], c=creditors[j]; const amt=Math.min(Math.abs(d.a), c.a);
-        res.push({from:d.p, to:c.p, amount:Math.round(amt)}); d.a += amt; c.a -= amt;
-        if (Math.abs(d.a)<1) i++; if (c.a<1) j++;
+        const d=debtors[i], c=creditors[j];
+        const amt=Math.min(Math.abs(d.a), c.a);
+        res.push({from:d.p, to:c.p, amount:Math.round(amt)});
+        d.a += amt; c.a -= amt;
+        if (Math.abs(d.a)<1) i++;
+        if (c.a<1) j++;
       }
       return res;
     });
 
     const getItemTagClass = (item) => {
       const s = String(item || '');
-      if (s.includes('交通')) return s.includes('機票') ? 'tag-ticket' : 'tag-traffic';
+      if (s.includes('交通')) {
+        if (s.includes('機票')) return 'tag-ticket';
+        return 'tag-traffic';
+      }
       if (s.includes('住宿')) return 'tag-stay';
       if (['早餐','午餐','晚餐','零食'].some(k => s.includes(k))) return 'tag-food';
       if (['紀念品'].some(k => s.includes(k))) return 'tag-shop';
       return 'tag-other';
     };
 
-    let chartInstance = null; const chartBusy = ref(false); let chartTimer = null;
+    /* Chart Logic */
+    let chartInstance = null;
+    const chartBusy = ref(false);
+    let chartTimer = null;
 
     const buildStats = () => {
-      const stats = {}; const list = filteredExpenses.value;
-      for (let i=0;i<list.length;i++){ const e = list[i]; const key = e.item || '其他'; stats[key] = (stats[key] || 0) + getAmountTWD(e); }
+      const stats = {};
+      const list = filteredExpenses.value; // Use the filtered list!
+      for (let i=0;i<list.length;i++){
+        const e = list[i];
+        const key = e.item || '其他';
+        stats[key] = (stats[key] || 0) + getAmountTWD(e);
+      }
       return stats;
     };
 
     const renderChart = () => {
       const canvas = document.getElementById('expenseChart');
       if (!canvas) return;
+
       const stats = buildStats();
       const labels = Object.keys(stats);
       const data = Object.values(stats);
+
       const nordicColors = ['#38bdf8', '#818cf8', '#c084fc', '#f472b6', '#fb7185', '#22d3ee', '#34d399', '#a78bfa', '#fbcfe8', '#e2e8f0'];
 
       if (chartInstance) {
@@ -1156,21 +1308,38 @@ createApp({
           type: 'doughnut',
           data: { labels, datasets: [{ data, backgroundColor: labels.map((_,i)=>nordicColors[i % nordicColors.length]), borderWidth: 0, hoverOffset: 4 }] },
           options: {
-            responsive: true, maintainAspectRatio: false, cutout: '65%', animation: { duration: 800 },
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '50%',
+            animation: { duration: 800 },
             plugins: {
-              legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11, weight: 'bold' }, color: '#64748b', usePointStyle: true, padding: 12, boxWidth: 8 } },
+              legend: {
+                position: 'bottom',
+                labels: {
+                  font: { family: 'Inter', size: 11, weight: 'bold' },
+                  color: '#64748b',
+                  usePointStyle: true,
+                  padding: 12,
+                  boxWidth: 8
+                }
+              },
               datalabels: {
-                 color: '#fff',
-                 font: { weight: 'bold', size: 10 },
-                 formatter: (value, ctx) => {
-                    let sum = 0;
-                    let dataArr = ctx.chart.data.datasets[0].data;
-                    dataArr.map(data => { sum += data; });
-                    let percentage = (value*100 / sum).toFixed(1);
-                    if (percentage < 5) return ""; // Hide label if segment too small
-                    return percentage + "%";
-                 },
-                 anchor: 'center', align: 'center', offset: 0
+                  color: '#475569',
+                  font: { weight: 'bold', size: 10 },
+                  formatter: (value, ctx) => {
+                      let sum = 0;
+                      let dataArr = ctx.chart.data.datasets[0].data;
+                      dataArr.map(data => { sum += data; });
+                      let percentage = (value*100 / sum).toFixed(1)+"%";
+                      return "$" + formatNumber(value) + "\n(" + percentage + ")";
+                  },
+                  anchor: 'center',
+                  align: 'center',
+                  offset: 0,
+                  textAlign: 'center',
+                  backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                  borderRadius: 4,
+                  padding: 2
               }
             }
           }
@@ -1182,17 +1351,26 @@ createApp({
     const scheduleRenderChart = async () => {
       if (tab.value !== 'analysis') return;
       chartBusy.value = true;
+
       if (chartTimer) clearTimeout(chartTimer);
-      chartTimer = setTimeout(() => { nextTick(() => { renderChart(); }); }, 300);
+      chartTimer = setTimeout(() => {
+        nextTick(() => {
+          renderChart();
+        });
+      }, 300);
     };
 
     const changeTabToAnalysis = async () => {
       tab.value = 'analysis';
-      if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+      if (chartInstance) {
+        chartInstance.destroy();
+        chartInstance = null;
+      }
       scheduleRenderChart();
     };
 
-    watch(filterCriteria, () => { if (tab.value === 'analysis') scheduleRenderChart(); }, { deep: true });
+    // Watch filtered expenses instead of raw expenses for chart updates
+    watch([tab, filterCriteria], () => { if (tab.value === 'analysis') scheduleRenderChart(); }, {deep: true});
     watch(expenses, () => { if (tab.value === 'analysis') scheduleRenderChart(); }, { deep: true });
 
     const openRateModal = () => { tempRates.value = { ...rates.value }; showRateModal.value = true; };
@@ -1200,72 +1378,156 @@ createApp({
     const openEditItin = (evt) => { itinForm.value = { ...evt }; isEditing.value = true; showItinModal.value = true; };
     const openEditExp = (exp) => { editExpForm.value = JSON.parse(JSON.stringify(exp)); showExpModal.value = true; };
     
+    // ===================================
+    // Actions
+    // ===================================
+
     const deleteItin = async (evt) => { 
       if(!confirm('確定刪除?')) return; 
+      
       itinerary.value = itinerary.value.filter(x => x.row !== evt.row); 
-      const pendingIdx = syncQueue.value.findIndex(job => job.type === 'itin' && job.action === 'add' && job.data.row === evt.row);
-      if (pendingIdx !== -1) { syncQueue.value.splice(pendingIdx, 1); saveLocal({}); } else { handleCRUD('itin', 'delete', { row: evt.row, sheetName: 'Itinerary' }); }
+      
+      const pendingIdx = syncQueue.value.findIndex(job => 
+        job.type === 'itin' && job.action === 'add' && job.data.row === evt.row
+      );
+
+      if (pendingIdx !== -1) {
+        syncQueue.value.splice(pendingIdx, 1);
+        saveLocal({});
+      } else {
+        handleCRUD('itin', 'delete', { row: evt.row, sheetName: 'Itinerary' });
+      }
     };
 
     const deleteExp = async (exp) => { 
       if(!confirm('確定刪除?')) return; 
       expenses.value = expenses.value.filter(x => x.row !== exp.row); 
-      const pendingIdx = syncQueue.value.findIndex(job => job.type === 'exp' && job.action === 'add' && job.data.row === exp.row);
-      if (pendingIdx !== -1) { syncQueue.value.splice(pendingIdx, 1); saveLocal({}); } else { handleCRUD('exp', 'delete', { row: exp.row, sheetName: 'Expenses' }); }
+      
+      const pendingIdx = syncQueue.value.findIndex(job => 
+        job.type === 'exp' && job.action === 'add' && job.data.row === exp.row
+      );
+
+      if (pendingIdx !== -1) {
+        syncQueue.value.splice(pendingIdx, 1);
+        saveLocal({});
+      } else {
+        handleCRUD('exp', 'delete', { row: exp.row, sheetName: 'Expenses' });
+      }
     };
 
     const submitItin = async () => {
       if(!itinForm.value.title) return alert('請輸入標題');
       const newRow = isEditing.value ? itinForm.value.row : Date.now();
       const payload = { ...itinForm.value, row: newRow, date: selDate.value };
-      if(isEditing.value) { const idx = itinerary.value.findIndex(x => x.row === newRow); if(idx !== -1) itinerary.value[idx] = payload; handleCRUD('itin', 'edit', payload); }
-      else { itinerary.value.push(payload); handleCRUD('itin', 'add', payload); }
+      
+      if(isEditing.value) {
+         const idx = itinerary.value.findIndex(x => x.row === newRow);
+         if(idx !== -1) itinerary.value[idx] = payload;
+         handleCRUD('itin', 'edit', payload);
+      } else {
+         itinerary.value.push(payload);
+         handleCRUD('itin', 'add', payload);
+      }
       showItinModal.value = false;
     };
 
     const submitExp = async () => {
       if(!newExp.value.amount || !newExp.value.item) return alert('請輸入金額與項目');
-      const payload = { ...newExp.value, row: Date.now(), date: new Date().toISOString().split('T')[0], time: new Date().toTimeString().slice(0,5), amountTWD: Math.round(newExp.value.amount * (rates.value[newExp.value.currency] || 1)) };
-      expenses.value.unshift(payload); handleCRUD('exp', 'add', payload);
-      newExp.value.amount = null; newExp.value.item = ''; newExp.value.note = ''; newExp.value.involved = []; alert('記帳成功');
+      const payload = { 
+        ...newExp.value, 
+        row: Date.now(), 
+        date: new Date().toISOString().split('T')[0], 
+        time: new Date().toTimeString().slice(0,5),
+        amountTWD: Math.round(newExp.value.amount * (rates.value[newExp.value.currency] || 1))
+      };
+      
+      expenses.value.unshift(payload);
+      handleCRUD('exp', 'add', payload);
+      
+      newExp.value.amount = null; newExp.value.item = ''; newExp.value.note = ''; newExp.value.involved = [];
+      alert('記帳成功');
     };
 
     const submitEditExp = async () => {
-        const idx = expenses.value.findIndex(e => e.row === editExpForm.value.row); if(idx === -1) return;
-        const updated = { ...editExpForm.value }; updated.amountTWD = Math.round(updated.amount * (rates.value[updated.currency] || 1));
-        expenses.value[idx] = updated; showExpModal.value = false; handleCRUD('exp', 'edit', updated);
+        const idx = expenses.value.findIndex(e => e.row === editExpForm.value.row);
+        if(idx === -1) return;
+        
+        const updated = { ...editExpForm.value };
+        updated.amountTWD = Math.round(updated.amount * (rates.value[updated.currency] || 1));
+        
+        expenses.value[idx] = updated;
+        showExpModal.value = false;
+        handleCRUD('exp', 'edit', updated);
     };
 
-    const saveRates = () => { rates.value = { ...tempRates.value }; saveLocal({}); showRateModal.value = false; callApi('updateRates', rates.value, 'POST'); };
-    const confirmClearSync = () => { if(confirm('確定要強制清空所有待上傳資料嗎？\n注意：這會導致離線新增的資料無法同步到伺服器。')) { syncQueue.value = []; saveLocal({}); } };
+    const saveRates = () => {
+       rates.value = { ...tempRates.value };
+       saveLocal({});
+       showRateModal.value = false;
+       callApi('updateRates', rates.value, 'POST');
+    };
+
+    const confirmClearSync = () => { 
+      if(confirm('確定要強制清空所有待上傳資料嗎？\n注意：這會導致離線新增的資料無法同步到伺服器。')) {
+        syncQueue.value = []; 
+        saveLocal({});
+      }
+    };
+    
     const toggleSelectAll = () => { if(newExp.value.involved.length === members.value.length) newExp.value.involved=[]; else newExp.value.involved=[...members.value]; };
+    
     const toggleSelectAllEdit = () => { 
         if(!editExpForm.value.involved) editExpForm.value.involved = [];
         if(editExpForm.value.involved.length === members.value.length) editExpForm.value.involved=[]; 
         else editExpForm.value.involved=[...members.value]; 
     };
-    const updateOnlineStatus = () => { isOnline.value = navigator.onLine; if (isOnline.value) processSyncQueue(); };
-    const isItemPending = (rowId) => { return syncQueue.value.some(job => job.data.row === rowId); };
+
+    const updateOnlineStatus = () => { 
+      isOnline.value = navigator.onLine; 
+      if (isOnline.value) processSyncQueue();
+    };
+
+    const isItemPending = (rowId) => {
+      return syncQueue.value.some(job => job.data.row === rowId);
+    };
 
     onMounted(async () => {
-      initDate(); window.addEventListener('online', updateOnlineStatus); window.addEventListener('offline', updateOnlineStatus);
-      await nextTick(); attachGestureListeners(); loadData();
+      initDate();
+      window.addEventListener('online', updateOnlineStatus);
+      window.addEventListener('offline', updateOnlineStatus);
+      await nextTick();
+      attachGestureListeners();
+      loadData();
+      
+      // Try processing queue on load if online
       if(navigator.onLine) processSyncQueue();
     });
 
     onBeforeUnmount(() => {
-      detachGestureListeners(); window.removeEventListener('online', updateOnlineStatus); window.removeEventListener('offline', updateOnlineStatus);
+      detachGestureListeners();
+      window.removeEventListener('online', updateOnlineStatus);
+      window.removeEventListener('offline', updateOnlineStatus);
       if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
     });
 
     return {
-      tab, isLoading, isOnline, isSyncing, syncQueue, dateContainer, scrollContainer, todayDate, todayWeekday,
-      pullDistance, isPullRefreshing, refreshText, tripStatus, tripDates, selDate, itinerary, expandedId, toggleExpand,
-      selectDate, getDayInfo, getEvents, getCategoryClass, expenses, rates, members, filterDate, uniqueExpDates, filteredExpenses, formatNumber, getAmountTWD,
-      publicSpent, momSpent, debts, getItemTagClass, chartBusy, changeTabToAnalysis,
-      showRateModal, showItinModal, showExpModal, isEditing, itinForm, newExp, editExpForm, tempRates,
-      showFilterModal, filterCriteria, availableOptions, activeFilterCount, toggleFilter, removeFilter, resetFilters,
-      openRateModal, openAddItin, openEditItin, openEditExp, deleteItin, deleteExp, submitItin, submitExp, submitEditExp, saveRates, 
+      tab, isLoading, isOnline, isSyncing, syncQueue,
+      dateContainer, scrollContainer,
+      todayDate, todayWeekday,
+      pullDistance, isPullRefreshing, refreshText,
+      tripStatus, tripDates, selDate,
+      itinerary, expandedId, toggleExpand,
+      selectDate, getDayInfo, getEvents, getCategoryClass,
+      expenses, rates, members, filterDate, uniqueExpDates, filteredExpenses, formatNumber, getAmountTWD,
+      publicSpent, momSpent, debts,
+      getItemTagClass,
+      chartBusy,
+      changeTabToAnalysis,
+      showRateModal, showItinModal, showExpModal, showFilterModal, isEditing,
+      itinForm, newExp, editExpForm, tempRates, filterCriteria, activeFilterCount, resetFilters,
+      uniqueLocations, uniquePayers, uniquePayments, uniqueCategories,
+      openRateModal, openAddItin, openEditItin, openEditExp,
+      deleteItin, deleteExp, submitItin, submitExp, submitEditExp, saveRates, 
       confirmClearSync, toggleSelectAll, toggleSelectAllEdit, isItemPending
     };
   }
