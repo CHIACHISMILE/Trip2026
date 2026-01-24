@@ -5,7 +5,7 @@
   <title>2026挪威冰島之旅</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="北歐之旅">
+  <meta name="apple-mobile-web-app-title" content="2026挪威冰島之旅">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#dbeafe">
   <link rel="manifest" href="manifest.json">
@@ -104,6 +104,8 @@
         user-select: text !important; 
         -webkit-user-select: text !important; 
         cursor: text; 
+        /* 關鍵：讓瀏覽器知道這個區域優先處理操作，防止 JS 誤判滑動 */
+        touch-action: manipulation;
     }
     .line-clamp-6 {
         display: -webkit-box;
@@ -111,8 +113,6 @@
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
-    
-    /* 強制文字換行，解決長字串破版問題 */
     .break-anywhere {
         overflow-wrap: anywhere;
         word-break: break-all;
@@ -132,7 +132,7 @@
        padding-top: max(20px, env(safe-area-inset-top) + 12px);">
     
     <div class="flex justify-between items-center">
-        <h1 class="text-xl font-black tracking-tighter text-slate-800 drop-shadow-sm">2026挪威冰島之旅</h1>
+        <h1 class="text-xl font-black tracking-tighter text-slate-800 drop-shadow-sm">2026 挪威冰島之旅</h1>
         <div class="text-right">
             <button v-if="syncQueue.length > 0" @click="forceClearSync" class="bg-amber-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg animate-pulse flex items-center gap-1 mb-1 ml-auto">待上傳 ({{ syncQueue.length }})</button>
             <div class="text-lg font-black text-sky-900 leading-none tracking-wide font-mono">{{ todayDate }}</div>
@@ -210,12 +210,12 @@
       <div class="glass-card p-6 space-y-5 shadow-lg">
         <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2"><span class="w-1 h-6 bg-sky-500 rounded-full"></span>新增消費</h3>
         <div class="flex gap-3">
-           <select v-model="newExp.payer" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold"><option value="" disabled selected>付款人</option><option>家齊</option><option>亭穎</option><option>媽媽</option></select>
-           <select v-model="newExp.location" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold"><option value="" disabled selected>地點</option><option>台灣</option><option>杜拜</option><option>挪威</option><option>冰島</option><option>英國</option></select>
+           <select v-model="newExp.payer" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold"><option value="" disabled selected>泥是誰</option><option>家齊</option><option>亭穎</option><option>媽媽</option></select>
+           <select v-model="newExp.location" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold"><option value="" disabled selected>在哪消費</option><option>台灣</option><option>杜拜</option><option>挪威</option><option>冰島</option><option>英國</option></select>
         </div>
         <div class="flex gap-3">
-           <select v-model="newExp.item" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold"><option value="" disabled selected>項目</option><option>早餐</option><option>午餐</option><option>晚餐</option><option>零食</option><option>住宿</option><option>交通（機票）</option><option>交通（租車）</option><option>交通（停車費）</option><option>交通（油錢）</option><option>紀念品</option><option>門票</option><option>其他</option></select>
-           <select v-model="newExp.payment" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold"><option value="" disabled selected>方式</option><option>現金</option><option>信用卡-國泰</option><option>信用卡-永豐</option><option>信用卡-元大</option></select>
+           <select v-model="newExp.item" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold"><option value="" disabled selected>消費項目</option><option>早餐</option><option>午餐</option><option>晚餐</option><option>零食</option><option>住宿</option><option>交通（機票）</option><option>交通（租車）</option><option>交通（停車費）</option><option>交通（油錢）</option><option>紀念品</option><option>門票</option><option>其他</option></select>
+           <select v-model="newExp.payment" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold"><option value="" disabled selected>付款方式</option><option>現金</option><option>信用卡-國泰</option><option>信用卡-永豐</option><option>信用卡-元大</option></select>
         </div>
         <div class="flex gap-3">
            <select v-model="newExp.currency" class="w-1/3 glass-input p-3 rounded-xl text-sm outline-none font-bold text-sky-700 bg-sky-50/50"><option>NTD</option><option>NOK</option><option>ISK</option><option>EUR</option><option>GBP</option><option>AED</option></select>
@@ -375,9 +375,12 @@ createApp({
     const todayDate = ref('');
     const todayWeekday = ref('');
     
-    // 展開狀態 ID
+    // 展開狀態與防止選取時觸發重繪
     const expandedId = ref(null);
     const toggleExpand = (id) => {
+        // 核心修復：如果有選取文字，不執行展開，保持原生選單存在
+        if(window.getSelection().toString().length > 0) return;
+        
         if(expandedId.value === id) expandedId.value = null;
         else expandedId.value = id;
     };
@@ -431,9 +434,11 @@ createApp({
     window.addEventListener('online', () => { isOnline.value = true; processSyncQueue(); });
     window.addEventListener('offline', () => { isOnline.value = false; });
 
-    // 關鍵修改：只阻擋特定的滑動保護區，允許文字選取
+    // 核心修復：如果碰到文字選取區，直接 return，不進行任何滑動計算
     const handleTouchStart = (e) => { 
-        if (e.target.closest('.swipe-protected')) return; // 只阻擋日期列
+        if (e.target.closest('.swipe-protected')) return; 
+        if (e.target.closest('.allow-select')) return; // 這裡如果不return，後續滑動邏輯會干擾選取
+        
         const touch = e.touches[0];
         startY.value = touch.clientY; startX.value = touch.clientX; 
         
@@ -477,8 +482,6 @@ createApp({
         if (isHorizontalDrag.value === true) {
             const endX = e.changedTouches[0].clientX;
             const diffX = endX - startX.value;
-            
-            // 邊緣切換判定
             const screenWidth = window.innerWidth;
             const edgeThreshold = screenWidth * 0.15;
             const isLeftEdge = startX.value < edgeThreshold;
