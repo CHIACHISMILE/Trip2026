@@ -192,7 +192,7 @@
     }
     @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-    /* Pending / Sync Styles */
+    /* Pending / Sync Styles - Modified */
     .pending-sync { opacity: 0.85; border: 2px dashed #f59e0b !important; position: relative; }
     .pending-badge { display: none; }
 
@@ -204,14 +204,16 @@
     .tag-shop { background:#fdf2f8; color:#be185d; border:1px solid #fce7f3; }
     .tag-other { background:#f1f5f9; color:#334155; border:1px solid #e2e8f0; }
 
-    /* Filter Chips */
+    /* Chip Styling */
     .filter-chip {
-        display: inline-flex; align-items: center; gap: 4px;
-        background: white; border: 1px solid #bae6fd;
-        color: #0284c7; padding: 4px 10px;
-        border-radius: 999px; font-size: 11px; font-weight: bold;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      display: inline-flex; align-items: center;
+      background: #e0f2fe; color: #0284c7;
+      padding: 4px 10px; border-radius: 99px;
+      font-size: 11px; font-weight: bold; margin-right: 6px; margin-bottom: 6px;
+      border: 1px solid #bae6fd;
     }
+    .filter-chip button { margin-left: 6px; opacity: 0.6; }
+    .filter-chip button:hover { opacity: 1; }
 
     /* Modal Styling */
     .modal-enter-active, .modal-leave-active { transition: opacity 0.3s ease; }
@@ -402,23 +404,11 @@
       </div>
 
       <div v-else-if="tab==='analysis'" key="analysis">
-        <div class="flex justify-between items-center mb-3 swipe-protected">
-          <button @click="showFilterModal=true"
-                  class="text-xs text-sky-600 bg-sky-50 border border-sky-200 px-4 py-2 rounded-full flex items-center shadow-sm font-bold gap-1">
-            <span>篩選
-          </button>
-          
-          <button @click="openRateModal"
+        <div class="flex justify-between mb-3 swipe-protected items-center">
+           <button @click="openRateModal"
                   class="text-xs text-slate-500 bg-white/50 border border-white px-4 py-2 rounded-full flex items-center shadow-sm backdrop-blur-sm font-bold">
             匯率設定
           </button>
-        </div>
-
-        <div v-if="activeFilters.length > 0" class="flex flex-wrap gap-2 mb-4 animate-pulse-once">
-            <button v-for="(f, i) in activeFilters" :key="i" @click="removeFilter(f.key)" class="filter-chip">
-                {{ f.label }}: {{ f.value }} <span>✕</span>
-            </button>
-            <button @click="resetFilters" class="text-[10px] font-bold text-slate-400 underline p-1">重置</button>
         </div>
 
         <div class="bg-gradient-to-br from-[#3b82f6] to-[#6366f1] text-white rounded-3xl p-6 shadow-xl mb-6 relative overflow-hidden ring-1 ring-white/20">
@@ -451,8 +441,22 @@
           </div>
         </div>
 
-        <div class="flex justify-between items-center mb-4 swipe-protected">
-          <h3 class="font-bold text-slate-700 text-lg">消費明細 ({{ filteredExpenses.length }})</h3>
+        <div class="flex justify-between items-center mb-2 swipe-protected">
+          <h3 class="font-bold text-slate-700 text-lg">消費分析</h3>
+          <button @click="showFilterModal=true" class="text-xs font-bold text-sky-600 bg-sky-50 px-3 py-1.5 rounded-lg border border-sky-100 flex items-center gap-1">
+             <span>🔍</span> 篩選
+             <span v-if="activeFilterCount > 0" class="bg-sky-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px]">{{activeFilterCount}}</span>
+          </button>
+        </div>
+
+        <div v-if="activeFilterCount > 0" class="flex flex-wrap mb-4 gap-y-1">
+           <div v-for="(val, key) in filterCriteria" :key="key">
+              <span v-if="val && val !== 'ALL'" class="filter-chip">
+                 {{ getFilterLabel(key) }}: {{ val }}
+                 <button @click="filterCriteria[key] = 'ALL'">✕</button>
+              </span>
+           </div>
+           <button @click="resetFilters" class="text-[10px] text-slate-400 font-bold underline px-2 self-center">清除全部</button>
         </div>
 
         <div class="glass-card p-4 mb-6">
@@ -505,7 +509,7 @@
         </div>
 
         <div class="glass-card p-6 mb-8">
-          <h3 class="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center">分帳結算 (基於目前篩選)</h3>
+          <h3 class="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center">分帳結算</h3>
           <div v-for="d in debts" :key="d.from + '_' + d.to"
                class="flex justify-between items-center py-3 text-sm border-b border-slate-50 last:border-0">
             <span class="flex items-center gap-2">
@@ -515,7 +519,7 @@
             </span>
             <span class="font-bold text-slate-800 font-mono text-base">{{ formatNumber(d.amount) }}</span>
           </div>
-          <div v-if="debts.length===0" class="text-center text-slate-400 text-xs py-2">目前篩選範圍內沒有欠款！</div>
+          <div v-if="debts.length===0" class="text-center text-slate-400 text-xs py-2">目前大家都付得剛剛好，沒有欠款！</div>
         </div>
       </div>
     </Transition>
@@ -525,9 +529,9 @@
     <div v-if="showItinModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 swipe-protected">
       <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" @click="showItinModal=false"></div>
       <div class="modal-content w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden relative z-10">
-        <div class="bg-slate-50 p-4 border-b flex justify-between items-center">
+        <div class="bg-slate-50 p-4 border-b flex justify-between items-center relative">
           <h3 class="font-bold text-slate-800">{{ isEditing ? '編輯行程' : '新增行程' }}</h3>
-          <button @click="showItinModal=false" class="text-slate-400 p-2">✕</button>
+          <button @click="showItinModal=false" class="text-slate-400 p-2 absolute right-3 top-1/2 transform -translate-y-1/2 hover:text-slate-600">✕</button>
         </div>
         <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
           <div class="flex gap-3">
@@ -567,9 +571,8 @@
             <textarea v-model="itinForm.note" rows="3" class="w-full glass-input p-3 rounded-xl mt-1 outline-none text-sm" placeholder="備註事項..."></textarea>
           </div>
         </div>
-        <div class="p-4 bg-slate-50 border-t flex gap-3">
-          <button @click="showItinModal=false" class="flex-1 bg-slate-100 text-slate-500 py-3 rounded-xl font-bold">取消</button>
-          <button @click="submitItin" class="flex-1 btn-glacier py-3 rounded-xl font-bold shadow-lg">儲存行程</button>
+        <div class="p-4 bg-slate-50 border-t">
+          <button @click="submitItin" class="w-full btn-glacier py-3 rounded-xl font-bold shadow-lg">儲存行程</button>
         </div>
       </div>
     </div>
@@ -638,59 +641,6 @@
   </Transition>
 
   <Transition name="modal">
-    <div v-if="showFilterModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 swipe-protected">
-      <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" @click="showFilterModal=false"></div>
-      <div class="modal-content w-full max-w-sm bg-white rounded-3xl shadow-2xl relative z-10 p-6 space-y-4">
-        <h3 class="font-bold text-slate-800 text-lg">進階篩選</h3>
-        
-        <div>
-            <label class="text-[10px] font-bold text-slate-400 uppercase">日期</label>
-            <select v-model="filterForm.date" class="w-full glass-input p-3 rounded-xl text-sm font-bold mt-1">
-                <option value="ALL">全部日期</option>
-                <option v-for="d in uniqueExpDates" :key="d" :value="d">{{d}}</option>
-            </select>
-        </div>
-
-        <div class="flex gap-3">
-            <div class="w-1/2">
-                <label class="text-[10px] font-bold text-slate-400 uppercase">付款人</label>
-                <select v-model="filterForm.payer" class="w-full glass-input p-3 rounded-xl text-sm font-bold mt-1">
-                    <option value="ALL">全部</option>
-                    <option v-for="p in uniqueOptions.payers" :key="p" :value="p">{{p}}</option>
-                </select>
-            </div>
-            <div class="w-1/2">
-                <label class="text-[10px] font-bold text-slate-400 uppercase">消費地點</label>
-                <select v-model="filterForm.location" class="w-full glass-input p-3 rounded-xl text-sm font-bold mt-1">
-                    <option value="ALL">全部</option>
-                    <option v-for="l in uniqueOptions.locations" :key="l" :value="l">{{l}}</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="flex gap-3">
-            <div class="w-1/2">
-                <label class="text-[10px] font-bold text-slate-400 uppercase">消費類別</label>
-                <select v-model="filterForm.category" class="w-full glass-input p-3 rounded-xl text-sm font-bold mt-1">
-                    <option value="ALL">全部</option>
-                    <option v-for="c in uniqueOptions.items" :key="c" :value="c">{{c}}</option>
-                </select>
-            </div>
-            <div class="w-1/2">
-                <label class="text-[10px] font-bold text-slate-400 uppercase">付款方式</label>
-                <select v-model="filterForm.payment" class="w-full glass-input p-3 rounded-xl text-sm font-bold mt-1">
-                    <option value="ALL">全部</option>
-                    <option v-for="p in uniqueOptions.payments" :key="p" :value="p">{{p}}</option>
-                </select>
-            </div>
-        </div>
-
-        <button @click="showFilterModal=false" class="w-full btn-glacier mt-4 py-3 rounded-xl font-bold">套用篩選</button>
-      </div>
-    </div>
-  </Transition>
-
-  <Transition name="modal">
     <div v-if="showRateModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 swipe-protected">
       <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" @click="showRateModal=false"></div>
       <div class="modal-content w-full max-w-sm bg-white rounded-3xl shadow-2xl relative z-10 p-6">
@@ -706,13 +656,72 @@
     </div>
   </Transition>
 
+  <Transition name="modal">
+    <div v-if="showFilterModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 swipe-protected">
+      <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" @click="showFilterModal=false"></div>
+      <div class="modal-content w-full max-w-sm bg-white rounded-3xl shadow-2xl relative z-10 p-6 space-y-4">
+        <div class="flex justify-between items-center mb-2">
+           <h3 class="font-bold text-slate-800 text-lg">進階篩選</h3>
+           <button @click="showFilterModal=false" class="text-slate-400 font-bold p-2">✕</button>
+        </div>
+        
+        <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+           <div>
+              <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">日期</label>
+              <select v-model="filterCriteria.date" class="w-full glass-input p-2 rounded-xl text-sm font-bold outline-none">
+                 <option value="ALL">全部日期</option>
+                 <option v-for="d in uniqueExpDates" :key="d" :value="d">{{ d }}</option>
+              </select>
+           </div>
+           
+           <div>
+              <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">消費地點</label>
+              <select v-model="filterCriteria.location" class="w-full glass-input p-2 rounded-xl text-sm font-bold outline-none">
+                 <option value="ALL">全部地點</option>
+                 <option>台灣</option><option>杜拜</option><option>挪威</option><option>冰島</option><option>英國</option>
+              </select>
+           </div>
+
+           <div>
+              <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">消費類別</label>
+              <select v-model="filterCriteria.item" class="w-full glass-input p-2 rounded-xl text-sm font-bold outline-none">
+                 <option value="ALL">全部項目</option>
+                 <option>早餐</option><option>午餐</option><option>晚餐</option><option>零食</option><option>住宿</option>
+                 <option>交通（機票）</option><option>交通（租車）</option><option>交通（停車費）</option><option>交通（油錢）</option>
+                 <option>紀念品</option><option>門票</option><option>其他</option>
+              </select>
+           </div>
+
+           <div>
+              <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">付款人</label>
+              <select v-model="filterCriteria.payer" class="w-full glass-input p-2 rounded-xl text-sm font-bold outline-none">
+                 <option value="ALL">全部</option><option>家齊</option><option>亭穎</option><option>媽媽</option>
+              </select>
+           </div>
+
+           <div>
+              <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">消費方式</label>
+              <select v-model="filterCriteria.payment" class="w-full glass-input p-2 rounded-xl text-sm font-bold outline-none">
+                 <option value="ALL">全部</option><option>現金</option><option>信用卡-國泰</option><option>信用卡-永豐</option><option>信用卡-元大</option>
+              </select>
+           </div>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+           <button @click="resetFilters" class="flex-1 bg-slate-100 text-slate-500 py-3 rounded-xl font-bold">重置</button>
+           <button @click="showFilterModal=false" class="flex-[2] btn-glacier py-3 rounded-xl font-bold">確認篩選</button>
+        </div>
+      </div>
+    </div>
+  </Transition>
+
 </div>
 
 <script>
-const YOUR_GAS_URL = 'https://script.google.com/macros/s/AKfycbz6PZtqLJzlS2a71R-RfZjpJCuqJVPoP7RuNxEe74mS_uvxBejMNGKboFSn2ArNnXAu/exec';
-
-// Register Plugin
+// 註冊 DataLabels 插件
 Chart.register(ChartDataLabels);
+
+const YOUR_GAS_URL = 'https://script.google.com/macros/s/AKfycbz6PZtqLJzlS2a71R-RfZjpJCuqJVPoP7RuNxEe74mS_uvxBejMNGKboFSn2ArNnXAu/exec';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -768,6 +777,35 @@ createApp({
     const todayDate = ref('');
     const todayWeekday = ref('');
 
+    // Filter Logic
+    const showFilterModal = ref(false);
+    const filterCriteria = ref({
+       date: 'ALL',
+       location: 'ALL',
+       payer: 'ALL',
+       item: 'ALL',
+       payment: 'ALL'
+    });
+
+    const activeFilterCount = computed(() => {
+       let count = 0;
+       if (filterCriteria.value.date !== 'ALL') count++;
+       if (filterCriteria.value.location !== 'ALL') count++;
+       if (filterCriteria.value.payer !== 'ALL') count++;
+       if (filterCriteria.value.item !== 'ALL') count++;
+       if (filterCriteria.value.payment !== 'ALL') count++;
+       return count;
+    });
+
+    const getFilterLabel = (key) => {
+       const map = { date:'日期', location:'地點', payer:'付款人', item:'類別', payment:'方式' };
+       return map[key] || key;
+    };
+
+    const resetFilters = () => {
+       filterCriteria.value = { date: 'ALL', location: 'ALL', payer: 'ALL', item: 'ALL', payment: 'ALL' };
+    };
+
     const expandedId = ref(null);
     const toggleExpand = (id) => {
       const sel = window.getSelection();
@@ -797,10 +835,7 @@ createApp({
       tripDates.push({ date: d.toISOString().split('T')[0], short: (d.getMonth()+1)+'/'+d.getDate() });
     }
     const selDate = ref(tripDates[0].date);
-    
-    // Filter State
-    const showFilterModal = ref(false);
-    const filterForm = ref({ date: 'ALL', payer: 'ALL', location: 'ALL', category: 'ALL', payment: 'ALL' });
+    const filterDate = ref('ALL'); // Keep this for compatibility but logic moved to filteredExpenses
 
     const showRateModal = ref(false);
     const showItinModal = ref(false);
@@ -1025,7 +1060,7 @@ createApp({
         itinerary.value = res.itinerary;
         members.value = res.members;
         rates.value = res.rates;
-        saveLocal({}); 
+        saveLocal({});
         if (tab.value === 'analysis') scheduleRenderChart();
       }
     };
@@ -1152,45 +1187,19 @@ createApp({
     const getEvents = (d) => itinerary.value.filter(e => e.date === d).sort((a,b)=>a.startTime.localeCompare(b.startTime));
     const formatNumber = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-    /* --- Advanced Filter Logic --- */
     const uniqueExpDates = computed(() => [...new Set(expenses.value.map(e => e.date))].sort());
     
-    const uniqueOptions = computed(() => {
-        return {
-            payers: [...new Set(expenses.value.map(e => e.payer).filter(Boolean))],
-            locations: [...new Set(expenses.value.map(e => e.location).filter(Boolean))],
-            items: [...new Set(expenses.value.map(e => e.item).filter(Boolean))],
-            payments: [...new Set(expenses.value.map(e => e.payment).filter(Boolean))]
-        };
-    });
-
-    const activeFilters = computed(() => {
-        const chips = [];
-        if (filterForm.value.date !== 'ALL') chips.push({ key: 'date', value: filterForm.value.date, label: '日期' });
-        if (filterForm.value.payer !== 'ALL') chips.push({ key: 'payer', value: filterForm.value.payer, label: '付款人' });
-        if (filterForm.value.location !== 'ALL') chips.push({ key: 'location', value: filterForm.value.location, label: '地點' });
-        if (filterForm.value.category !== 'ALL') chips.push({ key: 'category', value: filterForm.value.category, label: '類別' });
-        if (filterForm.value.payment !== 'ALL') chips.push({ key: 'payment', value: filterForm.value.payment, label: '付款' });
-        return chips;
-    });
-
-    const removeFilter = (key) => {
-        filterForm.value[key] = 'ALL';
-    };
-
-    const resetFilters = () => {
-        filterForm.value = { date: 'ALL', payer: 'ALL', location: 'ALL', category: 'ALL', payment: 'ALL' };
-    };
-
+    // Updated Filter Logic
     const filteredExpenses = computed(() => {
-        return expenses.value.filter(e => {
-            if (filterForm.value.date !== 'ALL' && e.date !== filterForm.value.date) return false;
-            if (filterForm.value.payer !== 'ALL' && e.payer !== filterForm.value.payer) return false;
-            if (filterForm.value.location !== 'ALL' && e.location !== filterForm.value.location) return false;
-            if (filterForm.value.category !== 'ALL' && e.item !== filterForm.value.category) return false;
-            if (filterForm.value.payment !== 'ALL' && e.payment !== filterForm.value.payment) return false;
-            return true;
-        });
+       return expenses.value.filter(e => {
+          const f = filterCriteria.value;
+          if (f.date !== 'ALL' && e.date !== f.date) return false;
+          if (f.location !== 'ALL' && e.location !== f.location) return false;
+          if (f.payer !== 'ALL' && e.payer !== f.payer) return false;
+          if (f.item !== 'ALL' && e.item !== f.item) return false;
+          if (f.payment !== 'ALL' && e.payment !== f.payment) return false;
+          return true;
+       });
     });
 
     const getAmountTWD = (exp) => {
@@ -1199,7 +1208,7 @@ createApp({
     };
 
     const publicSpent = computed(() => {
-      return filteredExpenses.value.reduce((sum, e) => {
+      return expenses.value.reduce((sum, e) => {
         const amt = getAmountTWD(e);
         if (!e.involved || e.involved.length === 0) return sum;
         const perShare = amt / e.involved.length;
@@ -1211,7 +1220,7 @@ createApp({
     });
 
     const momSpent = computed(() => {
-      return filteredExpenses.value.reduce((sum, e) => {
+      return expenses.value.reduce((sum, e) => {
         const amt = getAmountTWD(e);
         if (e.involved && e.involved.includes('媽媽')) return sum + (amt / e.involved.length);
         return sum;
@@ -1221,9 +1230,7 @@ createApp({
     const debts = computed(() => {
       if (members.value.length === 0) return [];
       const bal = {}; members.value.forEach(m => bal[m] = 0);
-      
-      // Calculate debts based on FILTERED expenses
-      filteredExpenses.value.forEach(e => {
+      expenses.value.forEach(e => {
         const amt = getAmountTWD(e);
         const split = e.involved || [];
         if (split.length > 0) {
@@ -1263,7 +1270,7 @@ createApp({
       return 'tag-other';
     };
 
-    /* Chart Logic */
+    /* Chart Logic - Enhanced */
     let chartInstance = null;
     const chartBusy = ref(false);
     let chartTimer = null;
@@ -1286,6 +1293,7 @@ createApp({
       const stats = buildStats();
       const labels = Object.keys(stats);
       const data = Object.values(stats);
+      const total = data.reduce((a, b) => a + b, 0);
 
       const nordicColors = ['#38bdf8', '#818cf8', '#c084fc', '#f472b6', '#fb7185', '#22d3ee', '#34d399', '#a78bfa', '#fbcfe8', '#e2e8f0'];
 
@@ -1301,7 +1309,7 @@ createApp({
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '50%',
+            cutout: '60%',
             animation: { duration: 800 },
             plugins: {
               legend: {
@@ -1314,22 +1322,30 @@ createApp({
                   boxWidth: 8
                 }
               },
+              // DataLabels Plugin Settings
               datalabels: {
-                color: '#1e3a8a',
-                font: { weight: 'bold', size: 10 },
                 formatter: (value, ctx) => {
-                    let sum = 0;
-                    let dataArr = ctx.chart.data.datasets[0].data;
-                    dataArr.map(data => { sum += data; });
-                    if(sum === 0) return '';
-                    let percentage = (value*100 / sum).toFixed(1)+"%";
-                    // Only show if segment is big enough to hold text
-                    if ((value/sum) < 0.05) return '';
-                    return formatNumber(value) + '\n' + percentage;
+                  let percentage = (value * 100 / total).toFixed(0) + "%";
+                  if (percentage === "0%") return "";
+                  // Show percentage primarily, can be modified to show amount too
+                  return percentage;
                 },
-                anchor: 'center',
-                align: 'center',
-                textAlign: 'center'
+                color: '#fff',
+                font: { weight: 'bold', size: 10 },
+                backgroundColor: (context) => {
+                  return context.dataset.backgroundColor;
+                },
+                borderRadius: 4,
+                padding: 2
+              },
+              tooltip: {
+                 callbacks: {
+                    label: function(tooltipItem) {
+                       let val = tooltipItem.raw;
+                       let percentage = (val * 100 / total).toFixed(1) + "%";
+                       return tooltipItem.label + ': $' + formatNumber(val) + ' (' + percentage + ')';
+                    }
+                 }
               }
             }
           }
@@ -1359,7 +1375,8 @@ createApp({
       scheduleRenderChart();
     };
 
-    watch([tab, filteredExpenses], () => { if (tab.value === 'analysis') scheduleRenderChart(); });
+    watch([tab, filterCriteria], () => { if (tab.value === 'analysis') scheduleRenderChart(); }, { deep: true });
+    watch(expenses, () => { if (tab.value === 'analysis') scheduleRenderChart(); }, { deep: true });
 
     const openRateModal = () => { tempRates.value = { ...rates.value }; showRateModal.value = true; };
     const openAddItin = () => { itinForm.value = { row: null, startTime: '09:00', endTime: '', category: '景點', title: '', location: '', link: '', note: '' }; isEditing.value = false; showItinModal.value = true; };
@@ -1506,14 +1523,14 @@ createApp({
       tripStatus, tripDates, selDate,
       itinerary, expandedId, toggleExpand,
       selectDate, getDayInfo, getEvents, getCategoryClass,
-      expenses, rates, members, filterDate, uniqueExpDates, filteredExpenses, formatNumber, getAmountTWD,
+      expenses, rates, members, uniqueExpDates, filteredExpenses, formatNumber, getAmountTWD,
       publicSpent, momSpent, debts,
       getItemTagClass,
       chartBusy,
       changeTabToAnalysis,
-      showRateModal, showItinModal, showExpModal, isEditing,
+      showRateModal, showItinModal, showExpModal, showFilterModal, isEditing,
       itinForm, newExp, editExpForm, tempRates,
-      showFilterModal, filterForm, uniqueOptions, activeFilters, removeFilter, resetFilters,
+      filterCriteria, activeFilterCount, getFilterLabel, resetFilters,
       openRateModal, openAddItin, openEditItin, openEditExp,
       deleteItin, deleteExp, submitItin, submitExp, submitEditExp, saveRates, 
       confirmClearSync, toggleSelectAll, toggleSelectAllEdit, isItemPending
