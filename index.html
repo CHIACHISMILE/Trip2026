@@ -1324,7 +1324,13 @@ createApp({
     };
 
     // Watch filters change for chart update
-    watch([tab, filters], () => { if (tab.value === 'analysis') scheduleRenderChart(); }, { deep: true });
+    watch(tab, (val) => {
+      if (val === 'analysis') scheduleRenderChart();
+      if (val === 'expense') {
+        newExp.value = { payer: '', location: '', item: '', payment: '', currency: 'NTD', amount: null, involved: [], note: '' };
+      }
+    });
+    watch(filters, () => { if (tab.value === 'analysis') scheduleRenderChart(); }, { deep: true });
     watch(expenses, () => { if (tab.value === 'analysis') scheduleRenderChart(); }, { deep: true });
 
     const openRateModal = () => { tempRates.value = { ...rates.value }; showRateModal.value = true; };
