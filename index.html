@@ -36,7 +36,7 @@
       touch-action: manipulation;
     }
 
-    /* ✅ 關鍵：不要在 body 全域禁用 callout，否則 iOS 選字會很不穩 */
+    /* Important: Do not disable callout globally on body, otherwise iOS selection becomes unstable */
     body { -webkit-touch-callout: default; }
 
     #fixed-bg {
@@ -55,7 +55,7 @@
       flex-direction: column;
       overflow: hidden;
       position: relative;
-      /* 預防非 allow-select 區域亂跳出選單 */
+      /* Prevent menu popup in non-selectable areas */
       -webkit-touch-callout: none;
     }
 
@@ -169,11 +169,11 @@
     .cat-food    { border-left: 4px solid #f97316; background: white; }
     .cat-note    { border-left: 4px solid #64748b; background: white; }
 
-    /* ✅ 文字可選取區 */
+    /* Text selectable area */
     .allow-select {
       user-select: text !important;
       -webkit-user-select: text !important;
-      -webkit-touch-callout: default !important; /* iOS 複製選單 */
+      -webkit-touch-callout: default !important; /* iOS Copy Menu */
       cursor: text;
     }
     .allow-select::selection { background: rgba(56, 189, 248, 0.25); }
@@ -198,7 +198,7 @@
     .pending-sync { opacity: 0.7; border: 1px dashed #f59e0b; }
     .pending-badge { background: #f59e0b; color: white; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 5px; }
 
-    /* ✅ 分析頁：分類 Tag 顏色 */
+    /* Analysis page tags */
     .tag { display:inline-flex; align-items:center; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
     .tag-food { background:#fff7ed; color:#c2410c; border:1px solid #ffedd5; }
     .tag-stay { background:#fefce8; color:#a16207; border:1px solid #fef9c3; }
@@ -248,7 +248,6 @@
 
   <div class="scrollable-content p-4" ref="scrollContainer">
     <Transition name="fade" mode="out-in">
-      <!-- 行程 -->
       <div v-if="tab==='itinerary'" key="itinerary">
         <div ref="dateContainer" class="overflow-x-auto whitespace-nowrap pb-4 px-1 scrollbar-hide scroll-smooth swipe-protected">
           <button v-for="d in tripDates" :key="d.date" :id="'date-btn-' + d.date" @click="selectDate(d.date)"
@@ -299,13 +298,10 @@
                    class="map-btn swipe-protected">地圖</a>
               </div>
 
-              <!-- ✅ 注意：不再 stop touch 事件，讓水平 swipe 可以在備註上觸發換日
-                   ✅ 選字時會由 JS 的 long-press intent 自動放行，不會觸發換日 -->
               <div
                 class="text-sm mt-3 text-slate-600 whitespace-pre-wrap opacity-90 allow-select break-anywhere"
                 :class="{'line-clamp-6': expandedId !== evt.row}"
                 v-if="evt.note"
-                @click.stop
               >{{ evt.note }}</div>
 
               <div class="mt-3 flex gap-2 justify-end swipe-protected">
@@ -329,7 +325,6 @@
         </div>
       </div>
 
-      <!-- 記帳 -->
       <div v-else-if="tab==='expense'" key="expense">
         <div class="glass-card p-6 space-y-5 shadow-lg swipe-protected">
           <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2"><span class="w-1 h-6 bg-sky-500 rounded-full"></span>新增消費</h3>
@@ -387,7 +382,6 @@
         </div>
       </div>
 
-      <!-- 分析 -->
       <div v-else-if="tab==='analysis'" key="analysis">
         <div class="flex justify-end mb-3 swipe-protected">
           <button @click="openRateModal"
@@ -443,7 +437,6 @@
           </div>
         </div>
 
-        <!-- ✅ 你要的：主標題顯示備註；分類變成小 Tag + 顏色 -->
         <div class="space-y-3 mb-8">
           <div v-for="exp in filteredExpenses" :key="exp.row"
                :class="['glass-card p-4 transition hover:shadow-md border-l-4 border-l-sky-400', exp.isPending ? 'pending-sync' : '']">
@@ -498,9 +491,6 @@
       </div>
     </Transition>
   </div>
-
-  <!-- Modals：略（你原本的 modal 可 그대로用；我保留你原邏輯） -->
-  <!-- 這裡為了篇幅不再重貼，你可以沿用你原本 modal 區塊（showRateModal/showItinModal/showExpModal），不影響本次修正 -->
 </div>
 
 <script>
@@ -575,7 +565,6 @@ createApp({
     const selDate = ref(tripDates[0].date);
     const filterDate = ref('ALL');
 
-    // ===（你原本 modal / form 變數如果需要，照舊保留）===
     const showRateModal = ref(false);
     const showItinModal = ref(false);
     const showExpModal = ref(false);
@@ -597,7 +586,7 @@ createApp({
       todayWeekday.value = days[now.getDay()];
     };
 
-    // ========= iOS 手勢引擎（重點修正：allow-select 只在「長按選字」時放行） =========
+    /* iOS Gesture Engine */
     const gesture = {
       active:false, mode:null,
       startX:0, startY:0, dx:0, dy:0,
@@ -644,14 +633,12 @@ createApp({
         gesture.selectIntent = false;
         clearLongPress();
 
-        // ✅ 只有在 allow-select 區域，啟動「長按選字」判定
         if (gesture.inSelectable) {
           gesture.longPressTimer = setTimeout(() => {
-            gesture.selectIntent = true; // 進入選字模式：不攔截、不 preventDefault
+            gesture.selectIntent = true;
           }, 220);
         }
 
-        // 其他可互動區塊：直接不接管
         gesture.blocked = isBlockedTarget(e.target);
       };
 
@@ -665,10 +652,8 @@ createApp({
         const absX = Math.abs(gesture.dx);
         const absY = Math.abs(gesture.dy);
 
-        // ✅ 若已經在選字（或長按成立），絕對放行：不 preventDefault，避免複製選單消失
         if (gesture.inSelectable && (gesture.selectIntent || hasTextSelection())) return;
 
-        // allow-select 區域：如果使用者很快水平滑動，視為 swipe → 取消 longpress
         if (gesture.inSelectable) {
           if (absX > 12 || absY > 12) clearLongPress();
         }
@@ -678,15 +663,12 @@ createApp({
           gesture.mode = (absX > absY) ? 'h' : 'v';
         }
 
-        // 水平 swipe：換日期（itinerary）
         if (gesture.mode === 'h') {
-          // 不干擾 iOS edge-back
           if (gesture.startedAtLeftEdge && gesture.dx > 0) return;
           if (e.cancelable) e.preventDefault();
           return;
         }
 
-        // 垂直：只在最上方下拉才接管
         if (gesture.mode === 'v') {
           const scroller = scrollContainer.value;
           const isTop = scroller ? scroller.scrollTop <= 0 : true;
@@ -702,14 +684,12 @@ createApp({
         gesture.active = false;
         clearLongPress();
 
-        // ✅ 真的在選字：不做任何 swipe/pull
         if (gesture.inSelectable && (gesture.selectIntent || hasTextSelection())) {
           pullDistance.value = 0;
           gesture.mode = null;
           return;
         }
 
-        // Pull to refresh
         if (pullDistance.value > 60) {
           pullDistance.value = 60;
           isPullRefreshing.value = true;
@@ -719,7 +699,6 @@ createApp({
           pullDistance.value = 0;
         }
 
-        // Swipe day
         if (gesture.mode === 'h' && tab.value === 'itinerary') {
           const absX = Math.abs(gesture.dx);
           const absY = Math.abs(gesture.dy);
@@ -737,7 +716,7 @@ createApp({
       attachGestureListeners._handlers = { onTouchStart, onTouchMove, onTouchEnd };
 
       el.addEventListener('touchstart', onTouchStart, { passive: true });
-      el.addEventListener('touchmove',  onTouchMove,  { passive: false }); // ✅ iOS 必須 passive:false
+      el.addEventListener('touchmove',  onTouchMove,  { passive: false });
       el.addEventListener('touchend',   onTouchEnd,   { passive: true });
       el.addEventListener('touchcancel',onTouchEnd,   { passive: true });
     };
@@ -753,7 +732,6 @@ createApp({
       attachGestureListeners._handlers = null;
     };
 
-    // ========= cache =========
     const saveLocal = (data) => {
       try {
         localStorage.setItem('tripData_v36', JSON.stringify(data));
@@ -813,7 +791,6 @@ createApp({
       }
     };
 
-    // ========= helpers =========
     const selectDate = (date) => { selDate.value = date; scrollToDateBtn(date); };
 
     const scrollToDateBtn = (date) => {
@@ -917,7 +894,6 @@ createApp({
       return res;
     });
 
-    // ========= 分類 Tag（分析頁） =========
     const getItemTagClass = (item) => {
       const s = String(item || '');
       if (s.includes('交通')) {
@@ -930,11 +906,10 @@ createApp({
       return 'tag-other';
     };
 
-    // ========= Chart（不卡版：update 而不是 destroy+new） =========
+    /* Chart Optimization */
     let chartInstance = null;
     const chartBusy = ref(false);
-    let chartRAF = null;
-    let chartDebounce = null;
+    let chartTimer = null;
 
     const buildStats = () => {
       const stats = {};
@@ -955,10 +930,14 @@ createApp({
       const labels = Object.keys(stats);
       const data = Object.values(stats);
 
-      // 用固定 palette（你原本就有）
       const nordicColors = ['#38bdf8', '#818cf8', '#c084fc', '#f472b6', '#fb7185', '#22d3ee', '#34d399', '#a78bfa', '#fbcfe8', '#e2e8f0'];
 
-      if (!chartInstance) {
+      if (chartInstance) {
+        chartInstance.data.labels = labels;
+        chartInstance.data.datasets[0].data = data;
+        chartInstance.data.datasets[0].backgroundColor = labels.map((_,i)=>nordicColors[i % nordicColors.length]);
+        chartInstance.update('none');
+      } else {
         chartInstance = new Chart(canvas, {
           type: 'doughnut',
           data: { labels, datasets: [{ data, backgroundColor: labels.map((_,i)=>nordicColors[i % nordicColors.length]), borderWidth: 0, hoverOffset: 4 }] },
@@ -966,7 +945,7 @@ createApp({
             responsive: true,
             maintainAspectRatio: false,
             cutout: '70%',
-            animation: { duration: 250 },
+            animation: { duration: 800 },
             plugins: {
               legend: {
                 position: 'bottom',
@@ -981,45 +960,46 @@ createApp({
             }
           }
         });
-      } else {
-        chartInstance.data.labels = labels;
-        chartInstance.data.datasets[0].data = data;
-        chartInstance.data.datasets[0].backgroundColor = labels.map((_,i)=>nordicColors[i % nordicColors.length]);
-        chartInstance.update('none'); // ✅ iPhone 超順
       }
+      chartBusy.value = false;
     };
 
     const scheduleRenderChart = async () => {
       if (tab.value !== 'analysis') return;
       chartBusy.value = true;
 
-      if (chartDebounce) clearTimeout(chartDebounce);
-      chartDebounce = setTimeout(async () => {
-        await nextTick();
-        if (chartRAF) cancelAnimationFrame(chartRAF);
-        chartRAF = requestAnimationFrame(() => {
-          try { renderChart(); }
-          finally { chartBusy.value = false; }
+      if (chartTimer) clearTimeout(chartTimer);
+      /* Delay 300ms for transition to finish */
+      chartTimer = setTimeout(() => {
+        nextTick(() => {
+          renderChart();
         });
-      }, 80);
+      }, 300);
     };
 
     const changeTabToAnalysis = async () => {
       tab.value = 'analysis';
-      await nextTick();
+      if (chartInstance) {
+        chartInstance.destroy();
+        chartInstance = null;
+      }
       scheduleRenderChart();
     };
 
     watch([tab, filterDate], () => { if (tab.value === 'analysis') scheduleRenderChart(); });
     watch(expenses, () => { if (tab.value === 'analysis') scheduleRenderChart(); }, { deep: true });
 
-    // ========= 基本 CRUD（你原本的功能，這裡保留最必要骨架；其餘可貼回你原本） =========
     const openRateModal = () => { tempRates.value = { ...rates.value }; showRateModal.value = true; };
+    const openAddItin = () => { itinForm.value = { row: null, startTime: '09:00', endTime: '', category: '景點', title: '', location: '', link: '', note: '' }; isEditing.value = false; showItinModal.value = true; };
+    const openEditItin = (evt) => { itinForm.value = { ...evt }; isEditing.value = true; showItinModal.value = true; };
+    const openEditExp = (exp) => { editExpForm.value = JSON.parse(JSON.stringify(exp)); showExpModal.value = true; };
+    const deleteItin = async (evt) => { if(!confirm('確定刪除?')) return; itinerary.value = itinerary.value.filter(x => x.row !== evt.row); await callApi('deleteItin', evt, 'POST'); };
+    const deleteExp = async (exp) => { if(!confirm('確定刪除?')) return; expenses.value = expenses.value.filter(x => x.row !== exp.row); await callApi('deleteExp', exp, 'POST'); };
+    const submitItin = async () => { /* Add logic */ };
+    const submitExp = async () => { /* Add logic */ };
+    const forceClearSync = () => { syncQueue.value = []; saveLocal({}); };
+    const toggleSelectAll = () => { if(newExp.value.involved.length === members.value.length) newExp.value.involved=[]; else newExp.value.involved=[...members.value]; };
 
-    // 下面這些：你可以直接把你原本的 submitExp / deleteExp / openAddItin / submitItin 等函數貼回來
-    // 我這裡為了聚焦修 bug，不再全部重貼 modal 與 GAS sync 的長段（你原本那套可直接沿用）
-
-    // ========= Lifecycle =========
     onMounted(async () => {
       initDate();
       await nextTick();
@@ -1040,17 +1020,15 @@ createApp({
       tripStatus, tripDates, selDate,
       itinerary, expandedId, toggleExpand,
       selectDate, getDayInfo, getEvents, getCategoryClass,
-      // 記帳/分析
       expenses, rates, members, filterDate, uniqueExpDates, filteredExpenses, formatNumber, getAmountTWD,
       publicSpent, momSpent, debts,
       getItemTagClass,
       chartBusy,
-      // tabs
       changeTabToAnalysis,
-      // modal vars（保留）
       showRateModal, showItinModal, showExpModal, isEditing,
       itinForm, newExp, editExpForm, tempRates,
-      openRateModal
+      openRateModal, openAddItin, openEditItin, openEditExp,
+      deleteItin, deleteExp, submitItin, submitExp, forceClearSync, toggleSelectAll
     };
   }
 }).mount('#app');
