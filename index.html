@@ -191,22 +191,10 @@
     }
     @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-    /* Pending / Sync Styles */
-    .pending-sync { opacity: 0.8; border: 1px dashed #f59e0b; position: relative; }
-    .pending-sync::after {
-      content: '待上傳';
-      position: absolute;
-      top: -6px; right: -6px;
-      background: #f59e0b;
-      color: white;
-      font-size: 9px;
-      padding: 2px 6px;
-      border-radius: 99px;
-      font-weight: 800;
-      box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
-      z-index: 5;
-    }
-    .pending-badge { background: #f59e0b; color: white; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 5px; }
+    /* Pending / Sync Styles - Modified */
+    .pending-sync { opacity: 0.85; border: 2px dashed #f59e0b !important; position: relative; }
+    /* Removed ::after content as requested */
+    .pending-badge { display: none; }
 
     .tag { display:inline-flex; align-items:center; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
     .tag-food { background:#fff7ed; color:#c2410c; border:1px solid #ffedd5; }
@@ -572,15 +560,57 @@
   <Transition name="modal">
     <div v-if="showExpModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 swipe-protected">
       <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" @click="showExpModal=false"></div>
-      <div class="modal-content w-full max-w-sm bg-white rounded-3xl shadow-2xl relative z-10 p-6 space-y-4">
+      <div class="modal-content w-full max-w-sm bg-white rounded-3xl shadow-2xl relative z-10 p-6 space-y-4 max-h-[85vh] overflow-y-auto">
         <h3 class="font-bold text-slate-800 text-lg">編輯消費</h3>
+        
         <div class="flex gap-3">
-          <input type="number" v-model="editExpForm.amount" class="w-2/3 glass-input p-3 rounded-xl text-xl font-bold">
+          <select v-model="editExpForm.payer" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold">
+            <option value="" disabled selected>泥是誰</option><option>家齊</option><option>亭穎</option><option>媽媽</option>
+          </select>
+          <select v-model="editExpForm.location" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold">
+            <option value="" disabled selected>在哪消費</option><option>台灣</option><option>杜拜</option><option>挪威</option><option>冰島</option><option>英國</option>
+          </select>
+        </div>
+
+        <div class="flex gap-3">
+          <select v-model="editExpForm.item" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold">
+            <option value="" disabled selected>消費項目</option>
+            <option>早餐</option><option>午餐</option><option>晚餐</option><option>零食</option><option>住宿</option>
+            <option>交通（機票）</option><option>交通（租車）</option><option>交通（停車費）</option><option>交通（油錢）</option>
+            <option>紀念品</option><option>門票</option><option>其他</option>
+          </select>
+          <select v-model="editExpForm.payment" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold">
+            <option value="" disabled selected>付款方式</option><option>現金</option><option>信用卡-國泰</option><option>信用卡-永豐</option><option>信用卡-元大</option>
+          </select>
+        </div>
+
+        <div class="flex gap-3">
           <select v-model="editExpForm.currency" class="w-1/3 glass-input p-3 rounded-xl text-sm font-bold bg-sky-50 text-sky-700">
             <option>NTD</option><option>NOK</option><option>ISK</option><option>EUR</option><option>GBP</option><option>AED</option>
           </select>
+          <input type="number" v-model="editExpForm.amount" class="w-2/3 glass-input p-3 rounded-xl text-xl font-bold" placeholder="金額">
         </div>
+
+        <div class="text-xs text-right text-slate-400 font-mono font-bold" v-if="editExpForm.amount && editExpForm.currency !== 'NTD'">
+            ≈ {{ formatNumber(Math.round(editExpForm.amount * rates[editExpForm.currency])) }} NTD
+        </div>
+
         <input v-model="editExpForm.note" class="w-full glass-input p-3 rounded-xl text-sm" placeholder="備註">
+
+        <div class="bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">分攤給</span>
+            <button @click="toggleSelectAllEdit" class="text-[10px] text-sky-600 font-bold bg-white px-2 py-1 rounded shadow-sm">全選</button>
+          </div>
+          <div class="flex gap-2 flex-wrap">
+            <label v-for="m in members" :key="m"
+                   class="flex flex-1 justify-center items-center space-x-2 border px-4 py-3 rounded-xl cursor-pointer transition-all duration-200"
+                   :class="(editExpForm.involved || []).includes(m)?'bg-white border-sky-400 text-sky-700 shadow-md transform -translate-y-0.5':'bg-transparent border-slate-200 text-slate-400'">
+              <input type="checkbox" :value="m" v-model="editExpForm.involved" class="hidden"><span class="text-sm font-bold">{{m}}</span>
+            </label>
+          </div>
+        </div>
+
         <div class="flex gap-2">
           <button @click="submitEditExp" class="flex-1 btn-glacier py-3 rounded-xl font-bold">更新</button>
           <button @click="showExpModal=false" class="px-4 bg-slate-100 text-slate-500 rounded-xl font-bold">取消</button>
@@ -671,23 +701,19 @@ createApp({
       expandedId.value = (expandedId.value === id) ? null : id;
     };
 
-    // 修正重點：Trip Status 邏輯
     const tripStatus = computed(() => {
       const now = new Date();
       const start = new Date('2026-08-30');
       const end = new Date('2026-09-26');
       now.setHours(0,0,0,0); start.setHours(0,0,0,0); end.setHours(0,0,0,0);
       
-      // 出發前：顯示倒數
       if (now < start) return `倒數 ${Math.ceil((start - now)/86400000)} 天`;
       
-      // 旅程中：顯示 Day X
       if (now >= start && now <= end) {
          const diff = Math.floor((now - start)/86400000) + 1;
          return `DAY ${diff}`;
       }
       
-      // 結束後：不顯示
       return '';
     });
 
@@ -914,10 +940,9 @@ createApp({
     const getBackendActionName = (type, action) => {
       if (action === 'delete') return 'deleteRow';
       const suffix = (type === 'itin') ? 'Itinerary' : 'Expense';
-      return action + suffix; // e.g., addItinerary, editExpense
+      return action + suffix;
     };
 
-    // Process queue when online (Background Sync)
     const processSyncQueue = async () => {
       if (syncQueue.value.length === 0 || !navigator.onLine || isSyncing.value) return;
       
@@ -945,9 +970,7 @@ createApp({
       if (syncQueue.value.length === 0) loadData();
     };
 
-    // Immediate Action Handler
     const handleCRUD = async (type, action, data) => {
-       // 1. Try Online Sync Immediately
        if (navigator.onLine) {
          isSyncing.value = true;
          try {
@@ -1302,6 +1325,12 @@ createApp({
     };
     
     const toggleSelectAll = () => { if(newExp.value.involved.length === members.value.length) newExp.value.involved=[]; else newExp.value.involved=[...members.value]; };
+    
+    const toggleSelectAllEdit = () => { 
+        if(!editExpForm.value.involved) editExpForm.value.involved = [];
+        if(editExpForm.value.involved.length === members.value.length) editExpForm.value.involved=[]; 
+        else editExpForm.value.involved=[...members.value]; 
+    };
 
     const updateOnlineStatus = () => { 
       isOnline.value = navigator.onLine; 
@@ -1348,7 +1377,7 @@ createApp({
       itinForm, newExp, editExpForm, tempRates,
       openRateModal, openAddItin, openEditItin, openEditExp,
       deleteItin, deleteExp, submitItin, submitExp, submitEditExp, saveRates, 
-      confirmClearSync, toggleSelectAll, isItemPending
+      confirmClearSync, toggleSelectAll, toggleSelectAllEdit, isItemPending
     };
   }
 }).mount('#app');
