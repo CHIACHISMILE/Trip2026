@@ -192,7 +192,7 @@
     }
     @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-    /* Pending / Sync Styles - Modified */
+    /* Pending / Sync Styles */
     .pending-sync { opacity: 0.85; border: 2px dashed #f59e0b !important; position: relative; }
     .pending-badge { display: none; }
 
@@ -807,7 +807,7 @@ createApp({
     const uniqueLocations = computed(() => [...new Set(expenses.value.map(e => e.location || '未知'))].sort());
     const uniquePayers = computed(() => [...new Set(expenses.value.map(e => e.payer))].sort());
     const uniquePayments = computed(() => [...new Set(expenses.value.map(e => e.payment))].sort());
-    const uniqueCategories = computed(() => [...new Set(expenses.value.map(e => e.item))].sort()); // Simplified category as item name or logic
+    const uniqueCategories = computed(() => [...new Set(expenses.value.map(e => e.item))].sort());
 
     // Apply Filters
     const filteredExpenses = computed(() => {
@@ -850,8 +850,6 @@ createApp({
       tripDates.push({ date: d.toISOString().split('T')[0], short: (d.getMonth()+1)+'/'+d.getDate() });
     }
     const selDate = ref(tripDates[0].date);
-    
-    // Kept filterDate ref for compatibility if needed, but primary is now filterCriteria
     const filterDate = ref('ALL'); 
 
     const showRateModal = ref(false);
@@ -1324,22 +1322,26 @@ createApp({
                 }
               },
               datalabels: {
-                  color: '#475569',
-                  font: { weight: 'bold', size: 10 },
+                  color: '#334155', // Dark text color
+                  font: { weight: '800', size: 11, family: 'Inter' },
                   formatter: (value, ctx) => {
                       let sum = 0;
                       let dataArr = ctx.chart.data.datasets[0].data;
                       dataArr.map(data => { sum += data; });
-                      let percentage = (value*100 / sum).toFixed(1)+"%";
-                      return "$" + formatNumber(value) + "\n(" + percentage + ")";
+                      let percentage = (value*100 / sum).toFixed(0)+"%";
+                      // Hide label if percentage < 5%
+                      if ((value*100 / sum) < 5) return null;
+                      return percentage + "\n$" + formatNumber(value);
                   },
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  borderRadius: 6,
+                  padding: { top: 4, bottom: 4, left: 6, right: 6 },
+                  borderWidth: 1,
+                  borderColor: 'rgba(255,255,255, 0.5)',
                   anchor: 'center',
                   align: 'center',
                   offset: 0,
-                  textAlign: 'center',
-                  backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                  borderRadius: 4,
-                  padding: 2
+                  textAlign: 'center'
               }
             }
           }
