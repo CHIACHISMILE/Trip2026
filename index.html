@@ -29,7 +29,7 @@
       background-color: #f0f9ff;
       color: #1e3a8a;
       overscroll-behavior: none;
-      /* Global selection disabled to prevent UI flickering, specific areas re-enabled below */
+      /* Global selection disabled to prevent UI flickering */
       user-select: none;
       -webkit-user-select: none;
       -webkit-tap-highlight-color: transparent;
@@ -178,7 +178,7 @@
       user-select: text !important;
       -webkit-user-select: text !important;
       -webkit-touch-callout: default !important;
-      cursor: auto; /* Changed from text to auto to act more native */
+      cursor: auto; 
     }
     .allow-select::selection { background: rgba(56, 189, 248, 0.25); }
 
@@ -325,6 +325,7 @@
 
               <div
                 class="text-sm mt-3 text-slate-600 whitespace-pre-wrap opacity-90 allow-select break-anywhere"
+                @click.stop
                 v-if="evt.note"
               >{{ evt.note }}</div>
 
@@ -812,18 +813,18 @@ createApp({
       todayWeekday.value = days[now.getDay()];
     };
 
-    /* iOS Gesture Engine (15% Logic) */
+    /* iOS Gesture Engine (15% Logic) with Text Selection Protection */
     const gesture = {
       active:false, mode:null,
       startX:0, startY:0, dx:0, dy:0,
       startedAtLeftEdge:false,
       startedAtRightEdge:false,
       inSelectable:false,
-      selectIntent:false,
+      selectIntent:false, // New Flag: If user holds still for a moment, lock as selection
       longPressTimer:null
     };
     
-    // Simple helper to check text selection
+    // Check if user has selected text
     const hasTextSelection = () => {
       const sel = window.getSelection();
       return !!(sel && sel.toString && sel.toString().length > 0);
@@ -864,10 +865,11 @@ createApp({
         gesture.startedAtRightEdge = (gesture.startX >= w - edgeThreshold);
 
         gesture.inSelectable = !!e.target.closest('.allow-select');
-        gesture.selectIntent = false;
+        gesture.selectIntent = false; // Reset intent
         clearLongPress();
 
         if (gesture.inSelectable) {
+          // If touching text, wait 220ms. If no move -> assume selection intended
           gesture.longPressTimer = setTimeout(() => {
             gesture.selectIntent = true;
           }, 220);
@@ -886,12 +888,14 @@ createApp({
         const absX = Math.abs(gesture.dx);
         const absY = Math.abs(gesture.dy);
 
-        // Crucial Check: If selecting, stop gesture logic completely
-        if (gesture.inSelectable && (gesture.selectIntent || hasTextSelection())) return;
-
+        // If user moved significantly (>10px), cancel the "Selection Intent" timer
+        // This means it's a swipe, not a hold
         if (gesture.inSelectable) {
-          if (absX > 12 || absY > 12) clearLongPress();
+           if (absX > 10 || absY > 10) clearLongPress();
         }
+
+        // CRITICAL: If intent is already selection or text is selected, STOP gesture logic
+        if (gesture.inSelectable && (gesture.selectIntent || hasTextSelection())) return;
 
         if (!gesture.mode) {
           if (absX < 10 && absY < 10) return;
@@ -920,10 +924,12 @@ createApp({
         gesture.active = false;
         clearLongPress();
 
+        // CRITICAL PROTECTION for iOS Menu
+        // If text is selected OR we determined intent was selection -> DO NOTHING
         if (gesture.inSelectable && (gesture.selectIntent || hasTextSelection())) {
           pullDistance.value = 0;
           gesture.mode = null;
-          return;
+          return; // Exit immediately, do not trigger date switch
         }
 
         if (pullDistance.value > 60) {
