@@ -5,12 +5,12 @@
   <title>2026挪威冰島之旅</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="2026挪威冰島之旅">
+  <meta name="apple-mobile-web-app-title" content="北歐之旅">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#dbeafe">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="https://img.icons8.com/color/180/snowflake.png">
-
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
@@ -18,19 +18,14 @@
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+  
   <style>
     /* 全局設定 */
     html, body {
-        height: 100dvh; width: 100%; overflow: hidden;
-        font-family: 'Inter', 'Noto Sans TC', -apple-system, sans-serif;
-        background-color: #f0f9ff; color: #1e3a8a;
-
-        /* 你原本的防誤觸設定保留 */
-        user-select: none;
-        -webkit-user-select: none;
-
-        -webkit-tap-highlight-color: transparent;
+        height: 100dvh; width: 100%; overflow: hidden; 
+        font-family: 'Inter', 'Noto Sans TC', -apple-system, sans-serif; 
+        background-color: #f0f9ff; color: #1e3a8a; 
+        user-select: none; -webkit-tap-highlight-color: transparent;
         overscroll-behavior: none;
     }
 
@@ -41,13 +36,13 @@
     }
 
     #app { height: 100%; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-
+    
     .scrollable-content {
         flex: 1; overflow-y: auto; overflow-x: hidden;
         -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
         touch-action: pan-y;
-        position: relative;
-        padding-top: 10px;
+        position: relative; 
+        padding-top: 10px; 
         padding-bottom: calc(90px + env(safe-area-inset-bottom));
     }
 
@@ -58,23 +53,23 @@
         box-shadow: 0 4px 15px rgba(148, 163, 184, 0.08); transition: transform 0.15s ease-out;
     }
     .glass-card:active { transform: scale(0.99); }
-
+    
     .glass-input {
         background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(255, 255, 255, 0.6);
         box-shadow: inset 0 2px 4px rgba(0,0,0,0.01); color: #334155; transition: all 0.3s;
     }
     .glass-input:focus { background: #fff; border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15); }
-
+    
     .btn-glacier {
         background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white;
         border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
     }
     .btn-glacier:active { box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); transform: translateY(1px); }
-
-    .tab-bar {
-        background: rgba(255, 255, 255, 0.95);
+    
+    .tab-bar { 
+        background: rgba(255, 255, 255, 0.95); 
         backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.5); 
         box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.05);
     }
     .tab-btn { color: #94a3b8; transition: all 0.3s; }
@@ -86,44 +81,37 @@
 
     .fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
     .fade-enter-from, .fade-leave-to { opacity: 0; }
-
-    .pull-indicator {
-        height: 0; display: flex; justify-content: center; align-items: flex-end;
-        padding-bottom: 5px; overflow: hidden; color: #64748b;
-        font-weight: 600; font-size: 0.8rem; transition: height 0.1s;
-        padding-top: env(safe-area-inset-top); box-sizing: content-box;
-    }
-
+    
+    .pull-indicator { height: 0; display: flex; justify-content: center; align-items: flex-end; padding-bottom: 5px; overflow: hidden; color: #64748b; font-weight: 600; font-size: 0.8rem; transition: height 0.1s; padding-top: env(safe-area-inset-top); box-sizing: content-box; }
+    
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .title-link { text-decoration: none; color: #0f172a; font-weight: 700; border-bottom: 1px dashed #cbd5e1; }
     .map-btn { display: inline-flex; align-items: center; justify-content: center; padding: 4px 8px; background: white; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 10px; font-weight: bold; color: #0284c7; text-decoration: none; flex-shrink: 0; }
-
+    
     .cat-traffic { border-left: 4px solid #3b82f6; background: white; }
     .cat-stay { border-left: 4px solid #eab308; background: white; }
     .cat-spot { border-left: 4px solid #a855f7; background: white; }
     .cat-food { border-left: 4px solid #f97316; background: white; }
     .cat-note { border-left: 4px solid #64748b; background: white; }
-
+    
     .skeleton { background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; }
     @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     .pending-sync { opacity: 0.7; border: 1px dashed #f59e0b; }
     .pending-badge { background: #f59e0b; color: white; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 5px; }
 
-    /* ✅ 文字選取區：允許選取 + iOS Safari 長按複製選單 */
-    .allow-select {
-        user-select: text !important;
-        -webkit-user-select: text !important;
-        -webkit-touch-callout: default !important;
-        cursor: text;
+    /* 文字選取優化 */
+    .allow-select { 
+        user-select: text !important; 
+        -webkit-user-select: text !important; 
+        cursor: text; 
     }
-
     .line-clamp-6 {
         display: -webkit-box;
         -webkit-line-clamp: 6;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
-
+    
     /* 強制文字換行，解決長字串破版問題 */
     .break-anywhere {
         overflow-wrap: anywhere;
@@ -131,7 +119,6 @@
     }
   </style>
 </head>
-
 <body>
 <div id="fixed-bg"></div>
 
@@ -140,12 +127,12 @@
       <span v-if="pullDistance > 20">{{ refreshText }}</span>
   </div>
 
-  <div class="px-6 pb-4 rounded-b-[2.5rem] shadow-sm swipe-protected relative z-20"
-       style="background: rgba(255,255,255,0.6); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-bottom: 1px solid rgba(255,255,255,0.4);
+  <div class="px-6 pb-4 rounded-b-[2.5rem] shadow-sm swipe-protected relative z-20" 
+       style="background: rgba(255,255,255,0.6); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-bottom: 1px solid rgba(255,255,255,0.4); 
        padding-top: max(20px, env(safe-area-inset-top) + 12px);">
-
+    
     <div class="flex justify-between items-center">
-        <h1 class="text-xl font-black tracking-tighter text-slate-800 drop-shadow-sm">2026 挪威冰島之旅</h1>
+        <h1 class="text-xl font-black tracking-tighter text-slate-800 drop-shadow-sm">2026挪威冰島之旅</h1>
         <div class="text-right">
             <button v-if="syncQueue.length > 0" @click="forceClearSync" class="bg-amber-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg animate-pulse flex items-center gap-1 mb-1 ml-auto">待上傳 ({{ syncQueue.length }})</button>
             <div class="text-lg font-black text-sky-900 leading-none tracking-wide font-mono">{{ todayDate }}</div>
@@ -167,23 +154,13 @@
     <button @click="changeTabToAnalysis" :class="['flex-1 p-4 tab-btn', tab==='analysis'?'tab-active':'']">分析</button>
   </div>
 
-  <div class="scrollable-content p-4"
-       ref="scrollContainer"
-       @touchstart="handleTouchStart"
-       @touchmove="handleTouchMove"
-       @touchend="handleTouchEnd">
-
+  <div class="scrollable-content p-4" ref="scrollContainer" @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
     <Transition name="fade" mode="out-in">
-
     <div v-if="tab==='itinerary'" key="itinerary">
       <div ref="dateContainer" class="overflow-x-auto whitespace-nowrap pb-4 px-1 scrollbar-hide scroll-smooth swipe-protected">
-        <button v-for="d in tripDates" :key="d.date" :id="'date-btn-' + d.date" @click="selectDate(d.date)"
-                :class="['px-4 py-2.5 rounded-2xl text-xs mr-2 border transition-all duration-300 font-bold shadow-sm',
-                selDate===d.date?'bg-sky-600 text-white border-sky-600 shadow-sky-200 shadow-lg scale-105':'glass-input text-slate-400 border-transparent hover:bg-white']">
-          {{ d.short }}
-        </button>
+        <button v-for="d in tripDates" :key="d.date" :id="'date-btn-' + d.date" @click="selectDate(d.date)" :class="['px-4 py-2.5 rounded-2xl text-xs mr-2 border transition-all duration-300 font-bold shadow-sm', selDate===d.date?'bg-sky-600 text-white border-sky-600 shadow-sky-200 shadow-lg scale-105':'glass-input text-slate-400 border-transparent hover:bg-white']">{{ d.short }}</button>
       </div>
-
+      
       <div v-if="isLoading && itinerary.length===0" class="space-y-4">
           <div v-for="i in 3" class="glass-card h-24 skeleton"></div>
       </div>
@@ -192,9 +169,7 @@
           <div class="text-center mb-6">
             <div class="inline-block glass-input px-6 py-2 rounded-full text-sm font-bold text-slate-600 shadow-sm">{{ getDayInfo(selDate) }}</div>
           </div>
-
-          <div v-for="evt in getEvents(selDate)"
-               :class="['glass-card flex mb-4 items-stretch overflow-hidden group', evt.isPending ? 'pending-sync' : '', getCategoryClass(evt.category)]">
+          <div v-for="evt in getEvents(selDate)" :class="['glass-card flex mb-4 items-stretch overflow-hidden group', evt.isPending ? 'pending-sync' : '', getCategoryClass(evt.category)]">
             <div class="w-16 flex flex-col justify-center items-center p-2 bg-slate-50/50 border-r border-slate-100 flex-shrink-0">
               <div class="font-black text-sm text-slate-700">{{ evt.startTime }}</div>
               <div v-if="evt.endTime" class="text-[10px] text-slate-400 mt-1 font-medium">{{ evt.endTime }}</div>
@@ -202,37 +177,31 @@
                 {{ evt.category }}
               </div>
             </div>
-
+            
             <div class="flex-1 p-4 relative min-w-0" @click="toggleExpand(evt.row)">
                 <div class="flex justify-between items-start">
                     <span v-if="!evt.link" class="font-bold text-base text-slate-800 leading-tight truncate pr-2">{{ evt.title }}</span>
                     <a v-else :href="evt.link" target="_blank" class="title-link text-base leading-tight truncate pr-2">{{ evt.title }}</a>
                 </div>
-
                 <div class="text-xs mt-2 text-slate-500 flex items-start gap-2" v-if="evt.location">
                     <span class="flex-1 pt-1 opacity-80 break-words">📍 {{ evt.location }}</span>
                     <a :href="'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(evt.location)" target="_blank" class="map-btn">地圖</a>
                 </div>
-
-                <!-- ✅ 重要：選取文字區域，阻止事件冒泡到外層 swipe handler / card click -->
-                <div
-                    class="text-sm mt-3 text-slate-600 whitespace-pre-wrap opacity-90 allow-select break-anywhere"
+                
+                <div 
+                    class="text-sm mt-3 text-slate-600 whitespace-pre-wrap opacity-90 allow-select break-anywhere" 
                     :class="{'line-clamp-6': expandedId !== evt.row}"
                     v-if="evt.note"
-                    @click.stop
-                    @touchstart.stop
-                    @touchmove.stop
-                    @touchend.stop>
+                    @click.stop="handleNoteClick($event, evt.row)">
                     {{ evt.note }}
                 </div>
-
-                <div class="mt-3 flex gap-2 justify-end">
+                
+                <div class="mt-3 flex gap-2 justify-end"> 
                    <button @click.stop="openEditItin(evt)" class="text-[10px] text-sky-600 bg-sky-50 border border-sky-100 px-3 py-1 rounded-lg font-bold flex-shrink-0">編輯</button>
                    <button @click.stop="deleteItin(evt)" class="text-[10px] text-red-500 bg-red-50 border border-red-100 px-3 py-1 rounded-lg font-bold flex-shrink-0">刪除</button>
                 </div>
             </div>
           </div>
-
           <button @click="openAddItin" class="w-full py-4 mt-4 border-2 border-dashed border-sky-200 text-sky-400 rounded-2xl font-bold hover:bg-sky-50 transition">+ 新增行程</button>
           <div class="h-10"></div>
       </div>
@@ -242,20 +211,12 @@
       <div class="glass-card p-6 space-y-5 shadow-lg">
         <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2"><span class="w-1 h-6 bg-sky-500 rounded-full"></span>新增消費</h3>
         <div class="flex gap-3">
-           <select v-model="newExp.payer" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold">
-             <option value="" disabled selected>泥是誰</option><option>家齊</option><option>亭穎</option><option>媽媽</option>
-           </select>
-           <select v-model="newExp.location" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold">
-             <option value="" disabled selected>在哪消費</option><option>台灣</option><option>杜拜</option><option>挪威</option><option>冰島</option><option>英國</option>
-           </select>
+           <select v-model="newExp.payer" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold"><option value="" disabled selected>付款人</option><option>家齊</option><option>亭穎</option><option>媽媽</option></select>
+           <select v-model="newExp.location" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold"><option value="" disabled selected>地點</option><option>台灣</option><option>杜拜</option><option>挪威</option><option>冰島</option><option>英國</option></select>
         </div>
         <div class="flex gap-3">
-           <select v-model="newExp.item" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold">
-             <option value="" disabled selected>消費項目</option><option>早餐</option><option>午餐</option><option>晚餐</option><option>零食</option><option>住宿</option><option>交通（機票）</option><option>交通（租車）</option><option>交通（停車費）</option><option>交通（油錢）</option><option>紀念品</option><option>門票</option><option>其他</option>
-           </select>
-           <select v-model="newExp.payment" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold">
-             <option value="" disabled selected>付款方式</option><option>現金</option><option>信用卡-國泰</option><option>信用卡-永豐</option><option>信用卡-元大</option>
-           </select>
+           <select v-model="newExp.item" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold"><option value="" disabled selected>項目</option><option>早餐</option><option>午餐</option><option>晚餐</option><option>零食</option><option>住宿</option><option>交通（機票）</option><option>交通（租車）</option><option>交通（停車費）</option><option>交通（油錢）</option><option>紀念品</option><option>門票</option><option>其他</option></select>
+           <select v-model="newExp.payment" class="w-1/2 glass-input p-3 rounded-xl text-sm outline-none font-bold"><option value="" disabled selected>方式</option><option>現金</option><option>信用卡-國泰</option><option>信用卡-永豐</option><option>信用卡-元大</option></select>
         </div>
         <div class="flex gap-3">
            <select v-model="newExp.currency" class="w-1/3 glass-input p-3 rounded-xl text-sm outline-none font-bold text-sky-700 bg-sky-50/50"><option>NTD</option><option>NOK</option><option>ISK</option><option>EUR</option><option>GBP</option><option>AED</option></select>
@@ -277,17 +238,17 @@
 
     <div v-else-if="tab==='analysis'" key="analysis">
         <div class="flex justify-end mb-3"><button @click="openRateModal" class="text-xs text-slate-500 bg-white/50 border border-white px-4 py-2 rounded-full flex items-center shadow-sm backdrop-blur-sm font-bold">匯率設定</button></div>
-
+        
         <div class="bg-gradient-to-br from-[#3b82f6] to-[#6366f1] text-white rounded-3xl p-6 shadow-xl mb-6 relative overflow-hidden ring-1 ring-white/20">
            <div class="absolute -top-10 -right-10 w-48 h-48 bg-white opacity-10 rounded-full blur-3xl"></div>
-
+           
            <div class="border-b border-white/10 pb-3 mb-3 flex justify-between items-center relative z-10"><div class="text-xs font-medium opacity-80 tracking-widest uppercase">家齊+亭穎 預算</div><div class="font-bold text-lg font-mono tracking-wider opacity-90">500,000</div></div>
            <div class="flex justify-between items-end relative z-10">
                <div><div class="text-4xl font-black tracking-tighter drop-shadow-sm">{{ formatNumber(Math.round(500000 - publicSpent)) }}</div><div class="text-xs font-bold opacity-70 mt-1">剩餘經費 (NTD)</div></div>
                <div class="text-right"><div class="text-lg font-bold">{{ formatNumber(Math.round(publicSpent)) }}</div><div class="text-xs opacity-70 font-medium">已支出 ({{ Math.round(publicSpent/500000*100) }}%)</div></div>
            </div>
            <div class="w-full bg-black/20 h-2 rounded-full mt-5 overflow-hidden relative z-10"><div class="bg-white h-full shadow-[0_0_10px_rgba(255,255,255,0.5)] transition-all duration-1000" :style="{width: Math.min((publicSpent/500000)*100, 100) + '%'}"></div></div>
-
+           
            <div class="mt-4 pt-3 border-t border-white/20 flex justify-between items-center text-yellow-100 relative z-10">
                <span class="text-xs font-bold">媽媽個人與分攤支出</span>
                <span class="font-bold font-mono text-lg">+ {{ formatNumber(Math.round(momSpent)) }}</span>
@@ -295,9 +256,9 @@
         </div>
 
         <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-slate-700 text-lg">消費明細</h3><select v-model="filterDate" class="glass-input px-3 py-1.5 rounded-lg text-xs text-slate-600 outline-none font-bold"><option value="ALL">全部日期</option><option v-for="d in uniqueExpDates" :value="d">{{ d }}</option></select></div>
-
+        
         <div class="glass-card p-4 mb-6"><div class="relative h-64 w-full"> <canvas id="expenseChart"></canvas></div></div>
-
+        
         <div class="space-y-3 mb-8">
             <div v-for="exp in filteredExpenses" :class="['glass-card p-4 flex justify-between items-center transition hover:shadow-md border-l-4 border-l-sky-400', exp.isPending ? 'pending-sync' : '']">
                 <div class="flex justify-between items-center w-full">
@@ -316,14 +277,12 @@
             </div>
             <div v-if="filteredExpenses.length===0" class="text-center text-slate-400 py-12 text-sm glass-panel rounded-2xl">尚無消費紀錄</div>
         </div>
-
         <div class="glass-card p-6 mb-8">
            <h3 class="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center">分帳結算</h3>
            <div v-for="d in debts" class="flex justify-between items-center py-3 text-sm border-b border-slate-50 last:border-0"><span class="flex items-center gap-2"><span class="font-bold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-100">{{d.from}}</span> <span class="text-slate-300 font-bold">-></span> <span class="font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-100">{{d.to}}</span></span><span class="font-bold text-slate-800 font-mono text-base">{{ formatNumber(d.amount) }}</span></div>
            <div v-if="debts.length===0" class="text-center text-slate-400 text-xs py-2">目前大家都付得剛剛好，沒有欠款！</div>
         </div>
     </div>
-
     </Transition>
   </div>
 
@@ -335,7 +294,7 @@
         <div class="flex gap-3 pt-6"><button @click="showRateModal=false" class="flex-1 bg-slate-100 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition">取消</button><button @click="saveAndRecalculateRates" class="flex-1 btn-glacier py-3 rounded-xl font-bold">儲存更新</button></div>
     </div>
   </div>
-
+  
   <div v-if="showItinModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
     <div class="glass-card w-full max-w-sm p-6 shadow-2xl bg-white/95 max-h-[90vh] overflow-y-auto">
         <h3 class="font-bold text-xl border-b border-slate-100 pb-3 text-slate-800 mb-4">{{ isEditing ? '編輯行程' : '新增行程' }}</h3>
@@ -363,11 +322,10 @@
         <div class="flex gap-3 pt-6"><button @click="showExpModal=false" class="flex-1 bg-slate-100 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition">取消</button><button @click="submitEditExp" class="flex-1 btn-glacier py-3 rounded-xl font-bold">更新</button></div>
     </div>
   </div>
-
 </div>
 
 <script>
-const YOUR_GAS_URL = 'https://script.google.com/macros/s/AKfycbz6PZtqLJzlS2a71R-RfZjpJCuqJVPoP7RuNxEe74mS_uvxBejMNGKboFSn2ArNnXAu/exec';
+const YOUR_GAS_URL = 'https://script.google.com/macros/s/AKfycbz6PZtqLJzlS2a71R-RfZjpJCuqJVPoP7RuNxEe74mS_uvxBejMNGKboFSn2ArNnXAu/exec'; 
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -394,22 +352,21 @@ async function callApi(action, data = null, method = 'GET') {
         }
         if (!response.ok) throw new Error('Network error');
         return await response.json();
-    } catch (error) {
-        console.error('API Error:', error);
-        throw error;
+    } catch (error) { 
+        console.error('API Error:', error); 
+        throw error; 
     }
 }
 
 const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
-
 createApp({
   setup() {
     const tab = ref('itinerary');
     const isLoading = ref(true);
     const isFirstLoad = ref(true);
     const isPullRefreshing = ref(false);
-    const isOnline = ref(navigator.onLine);
-    const syncQueue = ref([]);
+    const isOnline = ref(navigator.onLine); 
+    const syncQueue = ref([]); 
     const members = ref([]);
     const expenses = ref([]);
     const itinerary = ref([]);
@@ -418,14 +375,17 @@ createApp({
     const scrollContainer = ref(null);
     const todayDate = ref('');
     const todayWeekday = ref('');
-
-    // 展開狀態 ID
     const expandedId = ref(null);
-    const toggleExpand = (id) => {
-        const selection = window.getSelection();
-        if (selection && selection.toString().length > 0) return;
 
-        if (expandedId.value === id) expandedId.value = null;
+    // 🔴 核心修復：點擊文字時，若有選取則不展開
+    const handleNoteClick = (e, id) => {
+        const selection = window.getSelection();
+        if (selection && selection.toString().length > 0) return; // 讓系統選單保持開啟
+        toggleExpand(id);
+    };
+
+    const toggleExpand = (id) => {
+        if(expandedId.value === id) expandedId.value = null;
         else expandedId.value = id;
     };
 
@@ -454,7 +414,7 @@ createApp({
     const isEditing = ref(false);
     const itinForm = ref({ row: null, startTime: '09:00', endTime: '', category: '景點', title: '', location: '', link: '', note: '' });
     const newExp = ref({ payer: '', location: '', item: '', payment: '', currency: 'NTD', amount: null, involved: [], note: '' });
-
+    
     watch(() => newExp.value.payer, (newVal) => { if (newVal) { newExp.value.involved = [newVal]; } });
 
     const editExpForm = ref({});
@@ -465,7 +425,7 @@ createApp({
     const startY = ref(0);
     const startX = ref(0);
     const isPulling = ref(false);
-    const isHorizontalDrag = ref(null);
+    const isHorizontalDrag = ref(null); 
     const refreshText = computed(() => isPullRefreshing.value ? '更新中...' : '下拉更新');
 
     const initDate = () => {
@@ -478,64 +438,60 @@ createApp({
     window.addEventListener('online', () => { isOnline.value = true; processSyncQueue(); });
     window.addEventListener('offline', () => { isOnline.value = false; });
 
-    // ✅ Safari / iOS：只要起點在 allow-select，就完全放行原生選取/複製選單
-    const handleTouchStart = (e) => {
-        if (e.target.closest('.allow-select')) return;
-        if (e.target.closest('.swipe-protected')) return;
-
+    // 🔴 核心修復：手指按在文字區域時，直接停用自定義滑動偵測，交還給瀏覽器
+    const handleTouchStart = (e) => { 
+        if (e.target.closest('.swipe-protected') || e.target.closest('.allow-select')) return; 
+        
         const touch = e.touches[0];
-        startY.value = touch.clientY;
-        startX.value = touch.clientX;
-
-        isPulling.value = true;
-        isHorizontalDrag.value = null;
+        startY.value = touch.clientY; startX.value = touch.clientX; 
+        
+        const scroller = scrollContainer.value;
+        const isTop = scroller ? scroller.scrollTop <= 0 : false;
+        
+        isPulling.value = true; 
+        isHorizontalDrag.value = null; 
     };
 
     const handleTouchMove = (e) => {
         if (!isPulling.value) return;
-        if (e.target.closest('.allow-select')) return;
-
         const touch = e.touches[0];
         const diffY = touch.clientY - startY.value;
         const diffX = touch.clientX - startX.value;
-
+        
         if (isHorizontalDrag.value === null) {
             if (Math.abs(diffX) < 10 && Math.abs(diffY) < 10) return;
             isHorizontalDrag.value = Math.abs(diffX) > Math.abs(diffY);
         }
-
-        // 這個判斷保留，但不要只靠它（選取通常在長按後才出現）
-        const sel = window.getSelection();
-        if (sel && sel.toString().length > 0) return;
+        
+        // 🔴 防止選取文字時觸發
+        if (window.getSelection().toString().length > 0) return;
 
         if (isHorizontalDrag.value === true) {
-            if (e.cancelable) e.preventDefault();
+            if(e.cancelable) e.preventDefault(); 
         } else {
             const scroller = scrollContainer.value;
             const isTop = scroller ? scroller.scrollTop <= 0 : true;
             if (isTop && diffY > 0) {
                  if (e.cancelable) e.preventDefault();
-                 pullDistance.value = Math.pow(diffY, 0.7);
+                 pullDistance.value = Math.pow(diffY, 0.7); 
             }
         }
     };
 
     const handleTouchEnd = (e) => {
         if (!isPulling.value) return;
-        if (e.target.closest('.allow-select')) { isPulling.value = false; return; }
-
         isPulling.value = false;
-
-        const sel = window.getSelection();
-        if (sel && sel.toString().length > 0) return;
+        
+        // 🔴 如果有選取文字，不執行任何滑動動作
+        if (window.getSelection().toString().length > 0) return;
 
         if (pullDistance.value > 60) { pullDistance.value = 60; isPullRefreshing.value = true; loadData(); return; }
         else pullDistance.value = 0;
-
+        
         if (isHorizontalDrag.value === true) {
             const endX = e.changedTouches[0].clientX;
             const diffX = endX - startX.value;
-
+            
             const screenWidth = window.innerWidth;
             const edgeThreshold = screenWidth * 0.15;
             const isLeftEdge = startX.value < edgeThreshold;
@@ -543,17 +499,17 @@ createApp({
 
             if (Math.abs(diffX) > 50) {
                 if (tab.value === 'itinerary') {
-                    if (diffX < 0) {
-                        if (isRightEdge) switchTab('next');
+                    if (diffX < 0) { 
+                        if (isRightEdge) switchTab('next'); 
                         else switchDay('next');
-                    } else {
-                        if (!isLeftEdge) switchDay('prev');
+                    } else { 
+                        if (!isLeftEdge) switchDay('prev'); 
                     }
                 } else if (tab.value === 'expense') {
-                    if (diffX < 0) switchTab('next');
-                    else switchTab('prev');
+                    if (diffX < 0) switchTab('next'); 
+                    else switchTab('prev'); 
                 } else if (tab.value === 'analysis') {
-                    if (diffX > 0) switchTab('prev');
+                    if (diffX > 0) switchTab('prev'); 
                 }
             }
         }
@@ -561,18 +517,18 @@ createApp({
 
     const switchDay = (direction) => {
         const idx = tripDates.findIndex(d => d.date === selDate.value);
-        if (direction === 'next' && idx < tripDates.length - 1) { selectDate(tripDates[idx + 1].date); }
+        if (direction === 'next' && idx < tripDates.length - 1) { selectDate(tripDates[idx + 1].date); } 
         else if (direction === 'prev' && idx > 0) { selectDate(tripDates[idx - 1].date); }
     };
 
     const switchTab = (direction) => {
         const tabs = ['itinerary', 'expense', 'analysis'];
         const currentIdx = tabs.indexOf(tab.value);
-        if (direction === 'next' && currentIdx < 2) {
-            tab.value = tabs[currentIdx + 1];
+        if (direction === 'next' && currentIdx < 2) { 
+            tab.value = tabs[currentIdx + 1]; 
             if (tab.value === 'analysis') changeTabToAnalysis();
-        } else if (direction === 'prev' && currentIdx > 0) {
-            tab.value = tabs[currentIdx - 1];
+        } else if (direction === 'prev' && currentIdx > 0) { 
+            tab.value = tabs[currentIdx - 1]; 
         }
     };
 
@@ -603,7 +559,7 @@ createApp({
       if (loadLocal()) {
           if (isFirstLoad.value) { nextTick(() => { checkAndScrollToToday(); }); isFirstLoad.value = false; }
           if(tab.value === 'analysis') changeTabToAnalysis();
-          setTimeout(() => { if (!isPullRefreshing.value) isLoading.value = false; }, 300);
+          setTimeout(() => { if (!isPullRefreshing.value) isLoading.value = false; }, 300); 
       }
       if(!isOnline.value) { isLoading.value = false; isPullRefreshing.value = false; pullDistance.value = 0; return; }
 
@@ -624,7 +580,7 @@ createApp({
          pullDistance.value = 0;
       }
     };
-
+    
     onMounted(() => { loadData(); initDate(); });
 
     const processSyncQueue = async () => {
@@ -640,7 +596,7 @@ createApp({
         syncQueue.value.splice(0, successCount);
         saveLocal({ expenses: expenses.value, itinerary: itinerary.value, members: members.value, rates: rates.value });
     };
-
+    
     const forceClearSync = () => {
         if(confirm('清除未上傳的佇列？')) {
             syncQueue.value = [];
@@ -757,7 +713,7 @@ createApp({
     const uniqueExpDates = computed(() => [...new Set(expenses.value.map(e => e.date))].sort());
     const filteredExpenses = computed(() => { if (filterDate.value === 'ALL') return expenses.value; return expenses.value.filter(e => e.date === filterDate.value); });
     const getAmountTWD = (exp) => { if (exp.amountTWD && exp.amountTWD > 0) return exp.amountTWD; return Math.round(exp.amount * (rates.value[exp.currency] || 1)); };
-
+    
     const publicSpent = computed(() => {
         return expenses.value.reduce((sum, e) => {
             const amt = getAmountTWD(e);
@@ -785,23 +741,21 @@ createApp({
     const getEvents = (d) => itinerary.value.filter(e => e.date === d).sort((a,b)=>a.startTime.localeCompare(b.startTime));
     const formatNumber = (n) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-    const changeTabToAnalysis = () => {
-        tab.value = 'analysis';
-        setTimeout(() => { renderChart(); }, 300);
+    const changeTabToAnalysis = () => { 
+        tab.value = 'analysis'; 
+        setTimeout(() => {
+            renderChart();
+        }, 300);
     };
 
     const renderChart = () => {
         const ctx = document.getElementById('expenseChart');
-        if(!ctx) return;
+        if(!ctx) return; 
         const stats = {};
         filteredExpenses.value.forEach(e => { if(!stats[e.item]) stats[e.item] = 0; stats[e.item] += getAmountTWD(e); });
         const nordicColors = ['#38bdf8', '#818cf8', '#c084fc', '#f472b6', '#fb7185', '#22d3ee', '#34d399', '#a78bfa', '#fbcfe8', '#e2e8f0'];
         if(chartInstance) chartInstance.destroy();
-        chartInstance = new Chart(ctx, {
-          type: 'doughnut',
-          data: { labels: Object.keys(stats), datasets: [{ data: Object.values(stats), backgroundColor: nordicColors, borderWidth: 0, hoverOffset: 4 }] },
-          options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11, weight: 'bold' }, color: '#64748b', usePointStyle: true, padding: 15, boxWidth: 8 } } } }
-        });
+        chartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(stats), datasets: [{ data: Object.values(stats), backgroundColor: nordicColors, borderWidth: 0, hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11, weight: 'bold' }, color: '#64748b', usePointStyle: true, padding: 15, boxWidth: 8 } } } } });
     };
     watch(filterDate, () => { if(tab.value === 'analysis') renderChart(); });
 
@@ -831,19 +785,8 @@ createApp({
        return res;
     });
 
-    return {
-      tab, isLoading, members, expenses, itinerary, tripDates, selDate, filterDate, rates, newExp,
-      showItinModal, showExpModal, showRateModal, isEditing, itinForm, editExpForm, tempRates,
-      filteredExpenses, uniqueExpDates, getAmountTWD, changeTabToAnalysis, renderChart,
-      getCategoryClass, getDayInfo, getEvents, formatNumber, toggleSelectAll, submitExp,
-      openAddItin, openEditItin, deleteItin, submitItin, deleteExp, openEditExp, submitEditExp,
-      debts, selectDate, dateContainer, scrollContainer,
-      handleTouchStart, handleTouchMove, handleTouchEnd,
-      pullDistance, isPullRefreshing, refreshText, tripStatus,
-      publicSpent, momSpent, openRateModal, saveAndRecalculateRates,
-      todayDate, todayWeekday, isOnline, syncQueue, processSyncQueue, forceClearSync,
-      expandedId, toggleExpand
-    };
+    return { tab, isLoading, members, expenses, itinerary, tripDates, selDate, filterDate, rates, newExp, showItinModal, showExpModal, showRateModal, isEditing, itinForm, editExpForm, tempRates, filteredExpenses, uniqueExpDates, getAmountTWD, changeTabToAnalysis, renderChart, getCategoryClass, getDayInfo, getEvents, formatNumber, toggleSelectAll, submitExp, openAddItin, openEditItin, deleteItin, submitItin, deleteExp, openEditExp, submitEditExp, debts, selectDate, dateContainer, scrollContainer,
+    handleTouchStart, handleTouchMove, handleTouchEnd, pullDistance, isPullRefreshing, refreshText, tripStatus, publicSpent, momSpent, openRateModal, saveAndRecalculateRates, todayDate, todayWeekday, isOnline, syncQueue, processSyncQueue, forceClearSync, expandedId, toggleExpand, handleNoteClick };
   }
 }).mount('#app');
 </script>
