@@ -275,6 +275,37 @@
         </div>
 
         <div v-else>
+          <div class="glass-card overflow-hidden mb-6 relative group">
+             <div v-if="isOnline && currentMapUrl" class="w-full h-48 bg-slate-100 relative">
+               <iframe 
+                 :src="currentMapUrl" 
+                 width="100%" 
+                 height="100%" 
+                 style="border:0;" 
+                 allowfullscreen="" 
+                 loading="lazy" 
+                 referrerpolicy="no-referrer-when-downgrade">
+               </iframe>
+               <div class="absolute inset-0 pointer-events-none border-b border-slate-200"></div>
+             </div>
+             
+             <div v-else class="w-full h-48 bg-slate-100 flex flex-col items-center justify-center text-slate-400 gap-2">
+                <span class="text-3xl">🗺️</span>
+                <span class="text-xs font-bold">{{ isOnline ? '無當日行程地標' : '地圖需連網查看' }}</span>
+             </div>
+
+             <div class="p-3 bg-white/90 backdrop-blur-sm flex justify-between items-center border-t border-slate-100">
+               <div class="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                 <span class="w-2 h-2 rounded-full bg-sky-500"></span>
+                 當日行程地圖
+               </div>
+               <a :href="googleMapsRouteLink" target="_blank" 
+                  class="text-[10px] text-sky-600 bg-sky-50 border border-sky-100 px-3 py-1.5 rounded-full font-bold flex items-center gap-1 shadow-sm hover:bg-sky-100 transition swipe-protected">
+                 開啟完整路線 (App) ↗
+               </a>
+             </div>
+          </div>
+
           <div class="text-center mb-6">
             <div class="inline-block glass-input px-6 py-2 rounded-full text-sm font-bold text-slate-600 shadow-sm">
               {{ getDayInfo(selDate) }}
@@ -302,10 +333,13 @@
               </div>
 
               <div class="text-xs mt-2 text-slate-500 flex items-start gap-2" v-if="evt.location">
-                <span class="flex-1 pt-1 opacity-80 break-words">📍 {{ evt.location }}</span>
+                <span class="flex-1 pt-1 opacity-80 break-words cursor-pointer text-sky-600 underline decoration-dashed underline-offset-2 swipe-protected"
+                      @click.stop="focusMap(evt.location)">
+                   📍 {{ evt.location }}
+                </span>
                 <a :href="'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(evt.location)"
                    target="_blank"
-                   class="map-btn swipe-protected">地圖</a>
+                   class="map-btn swipe-protected">Go</a>
               </div>
 
               <div
@@ -402,12 +436,10 @@
 
         <div class="bg-gradient-to-br from-[#3b82f6] to-[#6366f1] text-white rounded-3xl p-6 shadow-xl mb-6 relative overflow-hidden ring-1 ring-white/20">
           <div class="absolute -top-10 -right-10 w-48 h-48 bg-white opacity-10 rounded-full blur-3xl"></div>
-
           <div class="border-b border-white/10 pb-3 mb-3 flex justify-between items-center relative z-10">
             <div class="text-xs font-medium opacity-80 tracking-widest uppercase">家齊+亭穎 預算</div>
             <div class="font-bold text-lg font-mono tracking-wider opacity-90">500,000</div>
           </div>
-
           <div class="flex justify-between items-end relative z-10">
             <div>
               <div class="text-4xl font-black tracking-tighter drop-shadow-sm">{{ formatNumber(Math.round(500000 - publicSpent)) }}</div>
@@ -418,24 +450,48 @@
               <div class="text-xs opacity-70 font-medium">已支出 ({{ Math.round(publicSpent/500000*100) }}%)</div>
             </div>
           </div>
-
           <div class="w-full bg-black/20 h-2 rounded-full mt-5 overflow-hidden relative z-10">
             <div class="bg-white h-full shadow-[0_0_10px_rgba(255,255,255,0.5)] transition-all duration-1000"
                  :style="{width: Math.min((publicSpent/500000)*100, 100) + '%'}"></div>
           </div>
-
           <div class="mt-4 pt-3 border-t border-white/20 flex justify-between items-center text-yellow-100 relative z-10">
             <span class="text-xs font-bold">媽媽個人與分攤支出</span>
             <span class="font-bold font-mono text-lg">+ {{ formatNumber(Math.round(momSpent)) }}</span>
           </div>
         </div>
 
-        <div class="flex justify-between items-center mb-4 swipe-protected">
-          <h3 class="font-bold text-slate-700 text-lg">消費明細</h3>
-          <select v-model="filterDate" class="glass-input px-3 py-1.5 rounded-lg text-xs text-slate-600 outline-none font-bold">
-            <option value="ALL">全部日期</option>
-            <option v-for="d in uniqueExpDates" :key="d" :value="d">{{ d }}</option>
-          </select>
+        <div class="mb-6 swipe-protected">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="font-bold text-slate-700 text-lg">多重篩選</h3>
+            <button @click="resetFilters" class="text-xs text-sky-500 font-bold bg-sky-50 px-2 py-1 rounded">重置</button>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-2">
+             <select v-model="analysisFilters.date" class="glass-input px-3 py-2 rounded-xl text-xs text-slate-600 outline-none font-bold">
+               <option value="ALL">所有日期</option>
+               <option v-for="d in uniqueExpDates" :key="d" :value="d">{{ d }}</option>
+             </select>
+             
+             <select v-model="analysisFilters.payer" class="glass-input px-3 py-2 rounded-xl text-xs text-slate-600 outline-none font-bold">
+               <option value="">所有付款人</option>
+               <option v-for="p in uniquePayers" :key="p" :value="p">{{ p }}</option>
+             </select>
+
+             <select v-model="analysisFilters.location" class="glass-input px-3 py-2 rounded-xl text-xs text-slate-600 outline-none font-bold">
+               <option value="">所有地點</option>
+               <option v-for="l in uniqueLocations" :key="l" :value="l">{{ l }}</option>
+             </select>
+
+             <select v-model="analysisFilters.item" class="glass-input px-3 py-2 rounded-xl text-xs text-slate-600 outline-none font-bold">
+               <option value="">所有項目</option>
+               <option v-for="i in uniqueItems" :key="i" :value="i">{{ i }}</option>
+             </select>
+
+             <select v-model="analysisFilters.payment" class="glass-input px-3 py-2 rounded-xl text-xs text-slate-600 outline-none font-bold col-span-2">
+               <option value="">所有付款方式</option>
+               <option v-for="p in uniquePayments" :key="p" :value="p">{{ p }}</option>
+             </select>
+          </div>
         </div>
 
         <div class="glass-card p-4 mb-6">
@@ -484,7 +540,7 @@
             </div>
           </div>
 
-          <div v-if="filteredExpenses.length===0" class="text-center text-slate-400 py-12 text-sm glass-panel rounded-2xl">尚無消費紀錄</div>
+          <div v-if="filteredExpenses.length===0" class="text-center text-slate-400 py-12 text-sm glass-panel rounded-2xl">尚無符合條件的紀錄</div>
         </div>
 
         <div class="glass-card p-6 mb-8">
@@ -688,6 +744,15 @@ createApp({
     const itinerary = ref([]);
     const rates = ref({});
 
+    // Filter State
+    const analysisFilters = ref({
+      date: 'ALL',
+      payer: '',
+      location: '',
+      item: '',
+      payment: ''
+    });
+
     const dateContainer = ref(null);
     const scrollContainer = ref(null);
 
@@ -723,7 +788,10 @@ createApp({
       tripDates.push({ date: d.toISOString().split('T')[0], short: (d.getMonth()+1)+'/'+d.getDate() });
     }
     const selDate = ref(tripDates[0].date);
-    const filterDate = ref('ALL');
+    
+    // Map State
+    const currentMapUrl = ref('');
+    const googleMapsRouteLink = ref('');
 
     const showRateModal = ref(false);
     const showItinModal = ref(false);
@@ -746,7 +814,7 @@ createApp({
       todayWeekday.value = days[now.getDay()];
     };
 
-    /* iOS Gesture Engine (15% Logic) */
+    /* iOS Gesture Engine */
     const gesture = {
       active:false, mode:null,
       startX:0, startY:0, dx:0, dy:0,
@@ -788,55 +856,43 @@ createApp({
         gesture.dy = 0;
         gesture.startX = t.clientX;
         gesture.startY = t.clientY;
-        
-        // 15% Edge Logic
         const w = window.innerWidth;
         const edgeThreshold = w * 0.15;
-        
         gesture.startedAtLeftEdge = (gesture.startX <= edgeThreshold);
         gesture.startedAtRightEdge = (gesture.startX >= w - edgeThreshold);
-
         gesture.inSelectable = !!e.target.closest('.allow-select');
         gesture.selectIntent = false;
         clearLongPress();
-
         if (gesture.inSelectable) {
           gesture.longPressTimer = setTimeout(() => {
             gesture.selectIntent = true;
           }, 220);
         }
-
         gesture.blocked = isBlockedTarget(e.target);
       };
 
       const onTouchMove = (e) => {
         if (!gesture.active) return;
         if (gesture.blocked) return;
-
         const t = e.touches[0];
         gesture.dx = t.clientX - gesture.startX;
         gesture.dy = t.clientY - gesture.startY;
         const absX = Math.abs(gesture.dx);
         const absY = Math.abs(gesture.dy);
-
         if (gesture.inSelectable && (gesture.selectIntent || hasTextSelection())) return;
-
         if (gesture.inSelectable) {
           if (absX > 12 || absY > 12) clearLongPress();
         }
-
         if (!gesture.mode) {
           if (absX < 10 && absY < 10) return;
           gesture.mode = (absX > absY) ? 'h' : 'v';
         }
-
         if (gesture.mode === 'h') {
           if ((gesture.startedAtLeftEdge || gesture.startedAtRightEdge) && e.cancelable) {
              e.preventDefault();
           }
           return;
         }
-
         if (gesture.mode === 'v') {
           const scroller = scrollContainer.value;
           const isTop = scroller ? scroller.scrollTop <= 0 : true;
@@ -851,13 +907,11 @@ createApp({
         if (!gesture.active) return;
         gesture.active = false;
         clearLongPress();
-
         if (gesture.inSelectable && (gesture.selectIntent || hasTextSelection())) {
           pullDistance.value = 0;
           gesture.mode = null;
           return;
         }
-
         if (pullDistance.value > 60) {
           pullDistance.value = 60;
           isPullRefreshing.value = true;
@@ -866,7 +920,6 @@ createApp({
         } else {
           pullDistance.value = 0;
         }
-
         if (gesture.mode === 'h') {
            const absX = Math.abs(gesture.dx);
            if (absX > 60) {
@@ -884,14 +937,12 @@ createApp({
              }
            }
         }
-
         gesture.mode = null;
         gesture.inSelectable = false;
         gesture.selectIntent = false;
       };
 
       attachGestureListeners._handlers = { onTouchStart, onTouchMove, onTouchEnd };
-
       el.addEventListener('touchstart', onTouchStart, { passive: true });
       el.addEventListener('touchmove',  onTouchMove,  { passive: false });
       el.addEventListener('touchend',   onTouchEnd,   { passive: true });
@@ -949,7 +1000,7 @@ createApp({
         itinerary.value = res.itinerary;
         members.value = res.members;
         rates.value = res.rates;
-        saveLocal({}); // Save the fresh data with real IDs to local storage
+        saveLocal({}); 
         if (tab.value === 'analysis') scheduleRenderChart();
       }
     };
@@ -1076,8 +1127,65 @@ createApp({
     const getEvents = (d) => itinerary.value.filter(e => e.date === d).sort((a,b)=>a.startTime.localeCompare(b.startTime));
     const formatNumber = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
+    // === Filter Logic ===
     const uniqueExpDates = computed(() => [...new Set(expenses.value.map(e => e.date))].sort());
-    const filteredExpenses = computed(() => (filterDate.value === 'ALL') ? expenses.value : expenses.value.filter(e => e.date === filterDate.value));
+    const uniquePayers = computed(() => [...new Set(expenses.value.map(e => e.payer).filter(Boolean))].sort());
+    const uniqueLocations = computed(() => [...new Set(expenses.value.map(e => e.location).filter(Boolean))].sort());
+    const uniqueItems = computed(() => [...new Set(expenses.value.map(e => e.item).filter(Boolean))].sort());
+    const uniquePayments = computed(() => [...new Set(expenses.value.map(e => e.payment).filter(Boolean))].sort());
+
+    const filteredExpenses = computed(() => {
+      return expenses.value.filter(e => {
+        if (analysisFilters.value.date !== 'ALL' && e.date !== analysisFilters.value.date) return false;
+        if (analysisFilters.value.payer && e.payer !== analysisFilters.value.payer) return false;
+        if (analysisFilters.value.location && e.location !== analysisFilters.value.location) return false;
+        if (analysisFilters.value.item && e.item !== analysisFilters.value.item) return false;
+        if (analysisFilters.value.payment && e.payment !== analysisFilters.value.payment) return false;
+        return true;
+      });
+    });
+
+    const resetFilters = () => {
+      analysisFilters.value = { date: 'ALL', payer: '', location: '', item: '', payment: '' };
+    };
+
+    // === Map Logic ===
+    const updateMap = () => {
+      const events = getEvents(selDate.value);
+      const locations = events.map(e => e.location).filter(l => l && l.trim() !== '');
+      
+      if (locations.length === 0) {
+        currentMapUrl.value = '';
+        googleMapsRouteLink.value = '';
+        return;
+      }
+
+      // 1. Embed URL (Focus on the first location or a default)
+      // Use 'output=embed' with the first valid location
+      const firstLoc = encodeURIComponent(locations[0]);
+      currentMapUrl.value = `https://maps.google.com/maps?q=${firstLoc}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
+
+      // 2. App Deep Link (Construct a route with all points)
+      // Format: https://www.google.com/maps/dir/?api=1&destination=LastLoc&waypoints=Loc1|Loc2|Loc3...
+      if (locations.length > 1) {
+        const dest = encodeURIComponent(locations[locations.length - 1]);
+        const waypoints = locations.slice(0, locations.length - 1).map(l => encodeURIComponent(l)).join('|');
+        googleMapsRouteLink.value = `https://www.google.com/maps/dir/?api=1&destination=${dest}&waypoints=${waypoints}&travelmode=driving`;
+      } else {
+        googleMapsRouteLink.value = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locations[0])}`;
+      }
+    };
+
+    const focusMap = (location) => {
+      if(!location) return;
+      const encoded = encodeURIComponent(location);
+      currentMapUrl.value = `https://maps.google.com/maps?q=${encoded}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+    };
+
+    watch(selDate, () => updateMap());
+    watch(itinerary, () => updateMap(), { deep: true });
+
+    // === End Map Logic ===
 
     const getAmountTWD = (exp) => {
       if (exp.amountTWD && exp.amountTWD > 0) return exp.amountTWD;
@@ -1226,8 +1334,7 @@ createApp({
       scheduleRenderChart();
     };
 
-    watch([tab, filterDate], () => { if (tab.value === 'analysis') scheduleRenderChart(); });
-    watch(expenses, () => { if (tab.value === 'analysis') scheduleRenderChart(); }, { deep: true });
+    watch([tab, filteredExpenses], () => { if (tab.value === 'analysis') scheduleRenderChart(); }, { deep: true });
 
     const openRateModal = () => { tempRates.value = { ...rates.value }; showRateModal.value = true; };
     const openAddItin = () => { itinForm.value = { row: null, startTime: '09:00', endTime: '', category: '景點', title: '', location: '', link: '', note: '' }; isEditing.value = false; showItinModal.value = true; };
@@ -1355,7 +1462,6 @@ createApp({
       attachGestureListeners();
       loadData();
       
-      // Try processing queue on load if online
       if(navigator.onLine) processSyncQueue();
     });
 
@@ -1374,7 +1480,9 @@ createApp({
       tripStatus, tripDates, selDate,
       itinerary, expandedId, toggleExpand,
       selectDate, getDayInfo, getEvents, getCategoryClass,
-      expenses, rates, members, filterDate, uniqueExpDates, filteredExpenses, formatNumber, getAmountTWD,
+      expenses, rates, members, 
+      analysisFilters, uniqueExpDates, uniquePayers, uniqueLocations, uniqueItems, uniquePayments, filteredExpenses, resetFilters,
+      formatNumber, getAmountTWD,
       publicSpent, momSpent, debts,
       getItemTagClass,
       chartBusy,
@@ -1383,7 +1491,8 @@ createApp({
       itinForm, newExp, editExpForm, tempRates,
       openRateModal, openAddItin, openEditItin, openEditExp,
       deleteItin, deleteExp, submitItin, submitExp, submitEditExp, saveRates, 
-      confirmClearSync, toggleSelectAll, toggleSelectAllEdit, isItemPending
+      confirmClearSync, toggleSelectAll, toggleSelectAllEdit, isItemPending,
+      currentMapUrl, googleMapsRouteLink, focusMap
     };
   }
 }).mount('#app');
