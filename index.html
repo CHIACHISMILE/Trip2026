@@ -30,7 +30,6 @@
       background-color: #f0f9ff;
       color: #1e3a8a;
       overscroll-behavior: none;
-      /* 全局禁止選取以防 UI 閃爍，但在特定輸入區重新啟用 */
       user-select: none;
       -webkit-user-select: none;
       -webkit-tap-highlight-color: transparent;
@@ -174,7 +173,6 @@
     .cat-food    { border-left: 4px solid #f97316; background: white; }
     .cat-note    { border-left: 4px solid #64748b; background: white; }
 
-    /* Enhanced Selection Styles for iOS Safari */
     .allow-select {
       user-select: text !important;
       -webkit-user-select: text !important;
@@ -243,30 +241,56 @@
         cursor: zoom-in;
     }
 
-    /* Full Screen Image Viewer Fixes */
+    /* --- FIXED IMAGE VIEWER STYLES --- */
     .img-viewer-overlay {
         position: fixed; inset: 0; z-index: 9999;
-        background: rgba(0, 0, 0, 0.95);
+        background: rgba(0, 0, 0, 0.98);
         display: flex; justify-content: center; align-items: center;
-        flex-direction: column; /* Allows adding a close button */
-        /* REMOVED touch-action: none to fix freezing */
+        flex-direction: column;
+        /* Padding for safe areas to prevent overlapping with notch */
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        transition: background 0.3s, backdrop-filter 0.3s;
     }
     .img-viewer-img {
-        max-width: 100%; max-height: 90vh;
+        max-width: 100%; 
+        max-height: 85vh; /* Limit height to leave room for UI */
         object-fit: contain;
+        transition: transform 0.1s linear;
+        border-radius: 4px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     }
     .img-viewer-close {
         position: absolute;
-        top: 20px; right: 20px;
-        width: 44px; height: 44px;
-        background: rgba(255, 255, 255, 0.2);
+        /* Fix position relative to safe area */
+        top: max(20px, env(safe-area-inset-top) + 20px); 
+        right: 20px;
+        width: 48px; height: 48px;
+        background: rgba(60, 60, 60, 0.8);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         color: white;
         border-radius: 50%;
         display: flex; justify-content: center; align-items: center;
-        font-size: 20px; font-weight: bold;
+        font-size: 24px; font-weight: 800;
         z-index: 10000;
         cursor: pointer;
+        border: 2px solid rgba(255,255,255,0.2);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
+    .img-viewer-close:active { transform: scale(0.9); background: white; color: black; }
+    
+    .pull-hint {
+        position: absolute;
+        top: max(80px, env(safe-area-inset-top) + 80px);
+        color: rgba(255,255,255,0.5);
+        font-size: 12px;
+        font-weight: bold;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.5s;
+    }
+    .show-hint .pull-hint { opacity: 1; }
   </style>
 </head>
 
@@ -617,9 +641,20 @@
   </div>
 
   <Transition name="fade">
-    <div v-if="showImgViewer" class="img-viewer-overlay" @click="closeImgViewer">
-        <div class="img-viewer-close" @click="closeImgViewer">✕</div>
-        <img :src="viewingImg" class="img-viewer-img" @click.stop>
+    <div v-if="showImgViewer" 
+         class="img-viewer-overlay" 
+         @click="closeImgViewer"
+         @touchstart="handleImgTouchStart"
+         @touchmove="handleImgTouchMove"
+         @touchend="handleImgTouchEnd">
+        
+        <div :class="['pull-hint', {'show-hint': imgGesture.isPulling}]">↓ 下拉關閉</div>
+        <div class="img-viewer-close" @click.stop="closeImgViewer">✕</div>
+        
+        <img :src="viewingImg" 
+             ref="imgViewerEl"
+             class="img-viewer-img" 
+             @click.stop>
     </div>
   </Transition>
 
@@ -827,9 +862,52 @@ createApp({
     const todayDate = ref('');
     const todayWeekday = ref('');
 
-    // Image Viewer State
+    // Image Viewer State & Gesture Logic
     const showImgViewer = ref(false);
     const viewingImg = ref('');
+    const imgViewerEl = ref(null);
+    const imgGesture = ref({ startY: 0, currentY: 0, isPulling: false });
+
+    // PULL DOWN LOGIC
+    const handleImgTouchStart = (e) => {
+        if(e.touches.length !== 1) return;
+        imgGesture.value.startY = e.touches[0].clientY;
+        imgGesture.value.isPulling = false;
+    };
+
+    const handleImgTouchMove = (e) => {
+        if(!showImgViewer.value) return;
+        const dy = e.touches[0].clientY - imgGesture.value.startY;
+        
+        // Only allow pulling down
+        if (dy > 0) {
+            e.preventDefault(); // Prevent scroll
+            imgGesture.value.currentY = dy;
+            imgGesture.value.isPulling = true;
+            
+            // Visual feedback: move image and fade background
+            if (imgViewerEl.value) {
+                imgViewerEl.value.style.transform = `translateY(${dy}px) scale(${1 - dy/1000})`;
+            }
+            // Fade overlay
+            const overlay = document.querySelector('.img-viewer-overlay');
+            if(overlay) overlay.style.backgroundColor = `rgba(0,0,0,${Math.max(0, 0.98 - dy/600)})`;
+        }
+    };
+
+    const handleImgTouchEnd = () => {
+        if (imgGesture.value.currentY > 100) {
+            closeImgViewer();
+        } else {
+            // Reset position
+            if (imgViewerEl.value) {
+                imgViewerEl.value.style.transform = '';
+            }
+            const overlay = document.querySelector('.img-viewer-overlay');
+            if(overlay) overlay.style.backgroundColor = '';
+        }
+        imgGesture.value = { startY: 0, currentY: 0, isPulling: false };
+    };
 
     const tripStatus = computed(() => {
       const now = new Date();
@@ -1433,7 +1511,12 @@ createApp({
         viewingImg.value = url;
         showImgViewer.value = true;
     };
-    const closeImgViewer = () => { showImgViewer.value = false; };
+    const closeImgViewer = () => { 
+        if (imgViewerEl.value) imgViewerEl.value.style.transform = '';
+        const overlay = document.querySelector('.img-viewer-overlay');
+        if(overlay) overlay.style.backgroundColor = '';
+        showImgViewer.value = false; 
+    };
 
     // ===================================
     // Actions
@@ -1588,7 +1671,8 @@ createApp({
       openRateModal, openAddItin, openEditItin, openEditExp,
       deleteItin, deleteExp, submitItin, submitExp, submitEditExp, saveRates, 
       confirmClearSync, toggleSelectAll, toggleSelectAllEdit, isItemPending,
-      handleImageUpload, removeImage, viewImage, closeImgViewer, showImgViewer, viewingImg
+      handleImageUpload, removeImage, viewImage, closeImgViewer, showImgViewer, viewingImg,
+      imgViewerEl, handleImgTouchStart, handleImgTouchMove, handleImgTouchEnd, imgGesture
     };
   }
 }).mount('#app');
