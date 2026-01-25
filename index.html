@@ -5,13 +5,12 @@
   <title>2026挪威冰島之旅</title>
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
-  
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="2026挪威冰島之旅">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  
+  <meta name="theme-color" content="#dbeafe">
   <meta name="referrer" content="no-referrer">
   
-  <meta name="theme-color" content="#dbeafe">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="https://img.icons8.com/color/180/snowflake.png">
 
@@ -24,99 +23,114 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    /* --- 全域重置與佈局修正 --- */
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
+    /* --- 全局重置與安全區域設定 --- */
+    :root {
+      /* 定義 iOS 安全區域變數，若不支援則為 0px */
+      --sat: env(safe-area-inset-top, 0px);
+      --sab: env(safe-area-inset-bottom, 0px);
     }
 
-    html, body {
+    html {
       height: 100%;
       width: 100%;
+      background-color: #f0f9ff; /* 預防載入時閃爍 */
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
       margin: 0;
       padding: 0;
-      overflow: hidden; /* 禁止整體滾動，只讓內容區滾動 */
+      height: 100%;
+      width: 100%;
+      overflow: hidden; /* 禁止 body 捲動，交給內部容器 */
       font-family: 'Inter', 'Noto Sans TC', -apple-system, sans-serif;
-      background-color: #f0f9ff;
       color: #1e3a8a;
-      overscroll-behavior: none;
       user-select: none;
       -webkit-user-select: none;
-      touch-action: none; /* 交給 JS 處理手勢 */
+      -webkit-tap-highlight-color: transparent;
+      touch-action: none; /* 禁止瀏覽器預設手勢 */
     }
 
+    /* 背景強制全螢幕 */
     #fixed-bg {
       position: fixed;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
+      inset: 0; /* top:0, right:0, bottom:0, left:0 */
       background: linear-gradient(160deg, #dbeafe 0%, #eff6ff 40%, #f0f9ff 100%);
       z-index: -1;
       pointer-events: none;
     }
 
+    /* App 主容器：使用 100dvh 確保在 iOS Safari 網址列伸縮時也正確 */
     #app {
       display: flex;
       flex-direction: column;
-      height: 100%;
-      width: 100%;
+      height: 100dvh; 
+      width: 100vw;
+      overflow: hidden;
       position: relative;
     }
 
-    /* --- 頂部標題區：完美適配瀏海 --- */
-    .header-section {
+    /* --- 頂部導覽列優化 --- */
+    .header-bar {
+      flex-shrink: 0;
       background: rgba(255,255,255,0.6);
       backdrop-filter: blur(25px);
       -webkit-backdrop-filter: blur(25px);
       border-bottom: 1px solid rgba(255,255,255,0.4);
-      border-radius: 0 0 2.5rem 2.5rem;
-      /* 關鍵：padding-top 加上安全區域，讓內容不會被時間擋住 */
-      padding-top: calc(env(safe-area-inset-top) + 12px); 
-      padding-bottom: 20px;
+      /* 關鍵：Padding Top 包含安全區域 + 原本的間距 */
+      padding-top: calc(var(--sat) + 12px);
+      padding-bottom: 16px;
       padding-left: 24px;
       padding-right: 24px;
-      flex-shrink: 0; /* 防止被壓縮 */
-      z-index: 20;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+      border-bottom-left-radius: 2.5rem;
+      border-bottom-right-radius: 2.5rem;
+      box-shadow: 0 4px 20px rgba(148, 163, 184, 0.05);
+      z-index: 50; /* 確保在內容之上 */
     }
 
-    /* --- 內容捲動區 --- */
+    /* --- 中間捲動內容區 --- */
     .scrollable-content {
-      flex: 1;
+      flex: 1; /* 佔滿剩餘空間 */
       overflow-y: auto;
       overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
-      overscroll-behavior-y: contain;
+      overscroll-behavior-y: contain; /* 避免下拉重新整理觸發瀏覽器行為 */
       position: relative;
+      padding: 16px;
       padding-top: 10px;
-      /* 底部留一點白，避免內容貼著 Tab Bar */
+      /* 底部留白 = 內容與 TabBar 的距離 */
       padding-bottom: 20px; 
-      touch-action: pan-y;
+      touch-action: pan-y; /* 允許垂直滑動 */
     }
 
-    /* --- 底部導航列：完美適配 Home Bar --- */
+    /* --- 底部 Tab Bar 優化 --- */
     .tab-bar {
+      flex-shrink: 0;
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border-top: 1px solid rgba(255, 255, 255, 0.5);
-      box-shadow: 0 -4px 20px -5px rgba(0, 0, 0, 0.05);
-      flex-shrink: 0;
-      /* 關鍵：padding-bottom 加上安全區域，讓按鈕不會被橫條擋住 */
-      padding-bottom: env(safe-area-inset-bottom);
-      z-index: 30;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.03);
+      display: flex;
+      /* 關鍵：Padding Bottom 包含安全區域 */
+      padding-bottom: var(--sab);
+      z-index: 50;
     }
-
-    /* 確保按鈕本身有高度，且在安全區域上方 */
+    
     .tab-btn { 
-        color: #94a3b8; 
-        transition: all 0.3s; 
-        padding-top: 16px; 
-        padding-bottom: 16px;
-        /* 在沒有 Home Bar 的手機上給一點底部空間 */
-        min-height: 60px; 
+      flex: 1; 
+      padding: 16px; 
+      padding-bottom: 16px; /* 額外按鈕間距 */
+      color: #94a3b8; 
+      transition: all 0.3s; 
+      font-size: 14px;
+      font-weight: 700;
     }
-    .tab-active { color: #0284c7; position: relative; }
+    
+    .tab-active { 
+      color: #0284c7; 
+      position: relative; 
+    }
     .tab-active::after {
       content: '';
       position: absolute;
@@ -124,10 +138,10 @@
       width: 30%; height: 3px;
       background: #0284c7;
       border-radius: 0 0 4px 4px;
-      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.5);
+      box-shadow: 0 2px 6px rgba(2, 132, 199, 0.4);
     }
 
-    /* --- UI 元件樣式 --- */
+    /* --- 通用元件樣式 --- */
     .glass-card {
       background: rgba(255, 255, 255, 0.85);
       backdrop-filter: blur(16px);
@@ -146,61 +160,24 @@
       color: #334155;
       transition: all 0.3s;
     }
-    .glass-input:focus {
-      background: #fff;
-      border-color: #38bdf8;
-      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
-    }
+    .glass-input:focus { background: #fff; border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15); }
 
     .btn-glacier {
       background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
-      color: white;
-      border: 1px solid rgba(255,255,255,0.2);
+      color: white; border: 1px solid rgba(255,255,255,0.2);
       box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
     }
-
-    .btn-cancel {
-      background: #f1f5f9;
-      color: #64748b;
-      border: 1px solid #e2e8f0;
-    }
+    .btn-cancel { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
 
     .pull-indicator {
-      height: 0;
-      display: flex;
-      justify-content: center;
-      align-items: flex-end;
-      overflow: hidden;
-      color: #64748b;
-      font-weight: 600;
-      font-size: 0.8rem;
-      transition: height 0.12s ease-out;
-      /* 下拉提示不需要額外 padding，因为它是在 header 下方 */
+      height: 0; display: flex; justify-content: center; align-items: flex-end;
+      padding-bottom: 5px; overflow: hidden; color: #64748b; font-weight: 600; font-size: 0.8rem;
+      transition: height 0.12s ease-out; box-sizing: content-box;
     }
 
     .scrollbar-hide::-webkit-scrollbar { display: none; }
-
-    .title-link {
-      text-decoration: none;
-      color: #0f172a;
-      font-weight: 700;
-      border-bottom: 1px dashed #cbd5e1;
-    }
-
-    .map-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 4px 8px;
-      background: white;
-      border-radius: 8px;
-      border: 1px solid #e2e8f0;
-      font-size: 10px;
-      font-weight: bold;
-      color: #0284c7;
-      text-decoration: none;
-      flex-shrink: 0;
-    }
+    .title-link { text-decoration: none; color: #0f172a; font-weight: 700; border-bottom: 1px dashed #cbd5e1; }
+    .map-btn { display: inline-flex; align-items: center; justify-content: center; padding: 4px 8px; background: white; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 10px; font-weight: bold; color: #0284c7; text-decoration: none; flex-shrink: 0; }
 
     .cat-traffic { border-left: 4px solid #3b82f6; background: white; }
     .cat-stay    { border-left: 4px solid #eab308; background: white; }
@@ -208,27 +185,13 @@
     .cat-food    { border-left: 4px solid #f97316; background: white; }
     .cat-note    { border-left: 4px solid #64748b; background: white; }
 
-    .allow-select {
-      user-select: text !important;
-      -webkit-user-select: text !important;
-      -webkit-touch-callout: default !important;
-      cursor: auto; 
-    }
+    .allow-select { user-select: text !important; -webkit-user-select: text !important; -webkit-touch-callout: default !important; cursor: auto; }
     .allow-select::selection { background: rgba(56, 189, 248, 0.25); }
-
     .break-anywhere { overflow-wrap: anywhere; word-break: break-all; }
-
-    .skeleton {
-      background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.5s infinite;
-      border-radius: 8px;
-    }
+    .skeleton { background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; }
     @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-
     .pending-sync { opacity: 0.85; border: 2px dashed #f59e0b !important; position: relative; }
-    .pending-badge { display: none; }
-
+    
     .tag { display:inline-flex; align-items:center; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
     .tag-food { background:#fff7ed; color:#c2410c; border:1px solid #ffedd5; }
     .tag-stay { background:#fefce8; color:#a16207; border:1px solid #fef9c3; }
@@ -237,94 +200,58 @@
     .tag-shop { background:#fdf2f8; color:#be185d; border:1px solid #fce7f3; }
     .tag-other { background:#f1f5f9; color:#334155; border:1px solid #e2e8f0; }
 
-    .filter-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        background: #e0f2fe;
-        color: #0369a1;
-        padding: 4px 10px;
-        border-radius: 999px;
-        font-size: 11px;
-        font-weight: 700;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
+    .filter-chip { display: inline-flex; align-items: center; gap: 4px; background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
     .filter-chip:hover { background: #bae6fd; }
 
-    /* Modal Styling */
-    .modal-enter-active, .modal-leave-active { transition: opacity 0.3s ease; }
-    .modal-enter-from, .modal-leave-to { opacity: 0; }
-    .modal-enter-active .modal-content, .modal-leave-active .modal-content { transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-    .modal-enter-from .modal-content, .modal-leave-to .modal-content { transform: scale(0.9) translateY(20px); }
-    
-    /* Image Upload Styles */
+    /* Image Upload & Viewer */
     .img-upload-btn { position: relative; overflow: hidden; }
     .img-upload-btn input[type=file] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-    .img-preview {
-        width: 100%; height: 120px;
-        object-fit: cover; border-radius: 12px;
-        border: 2px dashed #cbd5e1;
-        display: flex; justify-content: center; align-items: center;
-        color: #94a3b8; font-size: 12px; font-weight: bold;
-        background: #f8fafc;
-    }
-    .itinerary-img {
-        width: 100%; max-height: 200px; object-fit: cover;
-        border-radius: 12px; margin-top: 12px;
-        border: 1px solid rgba(0,0,0,0.05);
-        cursor: zoom-in;
-    }
+    .img-preview { width: 100%; height: 120px; object-fit: cover; border-radius: 12px; border: 2px dashed #cbd5e1; display: flex; justify-content: center; align-items: center; color: #94a3b8; font-size: 12px; font-weight: bold; background: #f8fafc; }
+    .itinerary-img { width: 100%; max-height: 200px; object-fit: cover; border-radius: 12px; margin-top: 12px; border: 1px solid rgba(0,0,0,0.05); cursor: zoom-in; }
 
-    /* --- FIXED IMAGE VIEWER STYLES --- */
+    /* 圖片全螢幕檢視器 - 修正樣式 */
     .img-viewer-overlay {
         position: fixed; inset: 0; z-index: 9999;
         background: rgba(0, 0, 0, 1);
         display: flex; justify-content: center; align-items: center;
         flex-direction: column;
-        padding-top: env(safe-area-inset-top);
-        padding-bottom: env(safe-area-inset-bottom);
-        transition: background 0.2s;
+        /* Padding 防止瀏海或 Home Bar 擋住 */
+        padding-top: var(--sat);
+        padding-bottom: var(--sab);
         touch-action: none;
         overflow: hidden;
     }
     .img-viewer-img {
-        max-width: 100%; 
-        max-height: 100%; 
-        object-fit: contain;
-        transform-origin: center center;
+        max-width: 100%; max-height: 100%;
+        object-fit: contain; transform-origin: center center;
     }
     .img-viewer-close {
         position: absolute;
-        top: max(20px, env(safe-area-inset-top) + 20px); 
+        top: calc(var(--sat) + 20px); /* 確保在瀏海下方 */
         right: 20px;
         width: 44px; height: 44px;
         background: rgba(50, 50, 50, 0.8);
-        color: white;
-        border-radius: 50%;
+        color: white; border-radius: 50%;
         display: flex; justify-content: center; align-items: center;
-        font-size: 24px; font-weight: 800;
-        z-index: 10000;
-        cursor: pointer;
-        border: 1px solid rgba(255,255,255,0.3);
+        font-size: 24px; font-weight: 800; z-index: 10000;
+        cursor: pointer; border: 1px solid rgba(255,255,255,0.3);
         box-shadow: 0 4px 15px rgba(0,0,0,0.5);
     }
-    
     .pull-hint {
         position: absolute;
-        top: max(80px, env(safe-area-inset-top) + 80px);
+        top: calc(var(--sat) + 80px);
         color: rgba(255,255,255,0.6);
-        font-size: 13px;
-        font-weight: bold;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 0.3s;
-        background: rgba(0,0,0,0.4);
-        padding: 4px 12px;
-        border-radius: 20px;
-        z-index: 10000;
+        font-size: 13px; font-weight: bold; pointer-events: none;
+        opacity: 0; transition: opacity 0.3s;
+        background: rgba(0,0,0,0.4); padding: 4px 12px; border-radius: 20px;
     }
     .show-hint .pull-hint { opacity: 1; }
+
+    /* Modal Animation */
+    .modal-enter-active, .modal-leave-active { transition: opacity 0.3s ease; }
+    .modal-enter-from, .modal-leave-to { opacity: 0; }
+    .modal-enter-active .modal-content, .modal-leave-active .modal-content { transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .modal-enter-from .modal-content, .modal-leave-to .modal-content { transform: scale(0.9) translateY(20px); }
   </style>
 </head>
 
@@ -332,7 +259,11 @@
 <div id="fixed-bg"></div>
 
 <div id="app">
-  <div class="header-section">
+  <div class="pull-indicator" :style="{ height: pullDistance + 'px' }">
+    <span v-if="pullDistance > 20">{{ refreshText }}</span>
+  </div>
+
+  <div class="header-bar">
     <div class="flex justify-between items-center">
       <h1 class="text-xl font-black tracking-tighter text-slate-800 drop-shadow-sm">2026 挪威冰島之旅</h1>
       <div class="text-right">
@@ -359,11 +290,7 @@
     </div>
   </div>
 
-  <div class="pull-indicator" :style="{ height: pullDistance + 'px' }">
-    <span v-if="pullDistance > 20">{{ refreshText }}</span>
-  </div>
-
-  <div class="scrollable-content p-4" ref="scrollContainer">
+  <div class="scrollable-content" ref="scrollContainer">
     <Transition name="fade" mode="out-in">
       
       <div v-if="tab==='itinerary'" key="itinerary">
@@ -666,7 +593,7 @@
     </Transition>
   </div>
 
-  <div class="flex tab-bar z-30 text-sm font-bold swipe-protected">
+  <div class="flex tab-bar z-10 text-sm font-bold swipe-protected flex-shrink-0">
     <button @click="tab='itinerary'" :class="['flex-1 tab-btn', tab==='itinerary'?'tab-active':'']">行程</button>
     <button @click="tab='expense'" :class="['flex-1 tab-btn', tab==='expense'?'tab-active':'']">記帳</button>
     <button @click="changeTabToAnalysis" :class="['flex-1 tab-btn', tab==='analysis'?'tab-active':'']">分析</button>
@@ -682,7 +609,6 @@
          @dblclick="toggleZoom">
         
         <div v-if="imgGesture.scale === 1" :class="['pull-hint', {'show-hint': imgGesture.isPulling}]">↓ 下拉關閉</div>
-        
         <div class="img-viewer-close" @click.stop="closeImgViewer">✕</div>
         
         <img :src="viewingImg" 
@@ -919,11 +845,9 @@ createApp({
 
     const handleImgTouchStart = (e) => {
         if (e.touches.length === 2) {
-            // Pinch start
             imgGesture.value.isZooming = true;
             imgGesture.value.startDistance = getDistance(e.touches);
         } else if (e.touches.length === 1) {
-            // Pan/Pull start
             imgGesture.value.startX = e.touches[0].clientX;
             imgGesture.value.startY = e.touches[0].clientY;
             imgGesture.value.isPulling = false;
@@ -932,27 +856,25 @@ createApp({
 
     const handleImgTouchMove = (e) => {
         if(!showImgViewer.value) return;
-        e.preventDefault(); // Prevent native scroll
+        e.preventDefault();
 
         if (e.touches.length === 2 && imgGesture.value.isZooming) {
-            // Pinching
             const dist = getDistance(e.touches);
             const scaleChange = dist / imgGesture.value.startDistance;
-            // Limit zoom range
             let newScale = imgGesture.value.scale * scaleChange;
             newScale = Math.max(1, Math.min(newScale, 4));
             
             if (imgViewerEl.value) {
-                imgViewerEl.value.style.transform = `scale(${newScale}) translate(${imgGesture.value.currentX}px, ${imgGesture.value.currentY}px)`;
+                // Simplification for smooth performance: only apply scale transform
+                // (Complete pan+zoom requires complex matrix math)
+                imgViewerEl.value.style.transform = `scale(${newScale})`;
             }
-            imgViewerEl.value.style.transform = `scale(${newScale})`;
             imgGesture.value.tempScale = newScale; 
         } 
         else if (e.touches.length === 1) {
             const dy = e.touches[0].clientY - imgGesture.value.startY;
             const dx = e.touches[0].clientX - imgGesture.value.startX;
 
-            // Only allow pull-down close if NOT zoomed in
             if (imgGesture.value.scale === 1) {
                 if (dy > 0) {
                     imgGesture.value.currentY = dy;
@@ -964,7 +886,7 @@ createApp({
                     if(overlay) overlay.style.backgroundColor = `rgba(0,0,0,${Math.max(0, 0.98 - dy/600)})`;
                 }
             } else {
-                // Pan logic (simplified: moving image when zoomed)
+                // Allow simple panning when zoomed (visual only)
                 if (imgViewerEl.value) {
                      imgViewerEl.value.style.transform = `scale(${imgGesture.value.scale}) translate(${dx/imgGesture.value.scale}px, ${dy/imgGesture.value.scale}px)`;
                 }
@@ -978,7 +900,6 @@ createApp({
                 imgGesture.value.scale = imgGesture.value.tempScale;
             }
             imgGesture.value.isZooming = false;
-            // Reset to 1 if user pinched out too much
             if (imgGesture.value.scale < 1) {
                 imgGesture.value.scale = 1;
                 resetImgTransform();
@@ -1033,15 +954,8 @@ createApp({
     }
     const selDate = ref(tripDates[0].date);
     
-    // Filter State
     const showFilterMenu = ref(false);
-    const filters = ref({
-        date: 'ALL',
-        item: 'ALL',
-        payer: 'ALL',
-        location: 'ALL',
-        payment: 'ALL'
-    });
+    const filters = ref({ date: 'ALL', item: 'ALL', payer: 'ALL', location: 'ALL', payment: 'ALL' });
 
     const showRateModal = ref(false);
     const showItinModal = ref(false);
@@ -1064,18 +978,13 @@ createApp({
       todayWeekday.value = days[now.getDay()];
     };
 
-    /* iOS Gesture Engine (15% Logic) with Text Selection Protection */
+    /* iOS Gesture Engine */
     const gesture = {
-      active:false, mode:null,
-      startX:0, startY:0, dx:0, dy:0,
-      startedAtLeftEdge:false,
-      startedAtRightEdge:false,
-      inSelectable:false,
-      selectIntent:false, // New Flag: If user holds still for a moment, lock as selection
-      longPressTimer:null
+      active:false, mode:null, startX:0, startY:0, dx:0, dy:0,
+      startedAtLeftEdge:false, startedAtRightEdge:false,
+      inSelectable:false, selectIntent:false, longPressTimer:null
     };
     
-    // Check if user has selected text
     const hasTextSelection = () => {
       const sel = window.getSelection();
       return !!(sel && sel.toString && sel.toString().length > 0);
@@ -1089,10 +998,7 @@ createApp({
     };
 
     const clearLongPress = () => {
-      if (gesture.longPressTimer) {
-        clearTimeout(gesture.longPressTimer);
-        gesture.longPressTimer = null;
-      }
+      if (gesture.longPressTimer) { clearTimeout(gesture.longPressTimer); gesture.longPressTimer = null; }
     };
 
     const attachGestureListeners = () => {
@@ -1101,51 +1007,29 @@ createApp({
 
       const onTouchStart = (e) => {
         const t = e.touches[0];
-        gesture.active = true;
-        gesture.mode = null;
-        gesture.dx = 0;
-        gesture.dy = 0;
-        gesture.startX = t.clientX;
-        gesture.startY = t.clientY;
-        
-        // 15% Edge Logic
+        gesture.active = true; gesture.mode = null; gesture.dx = 0; gesture.dy = 0;
+        gesture.startX = t.clientX; gesture.startY = t.clientY;
         const w = window.innerWidth;
         const edgeThreshold = w * 0.15;
-        
         gesture.startedAtLeftEdge = (gesture.startX <= edgeThreshold);
         gesture.startedAtRightEdge = (gesture.startX >= w - edgeThreshold);
-
         gesture.inSelectable = !!e.target.closest('.allow-select');
-        gesture.selectIntent = false; // Reset intent
+        gesture.selectIntent = false;
         clearLongPress();
-
         if (gesture.inSelectable) {
-          // If touching text, wait 220ms. If no move -> assume selection intended
-          gesture.longPressTimer = setTimeout(() => {
-            gesture.selectIntent = true;
-          }, 220);
+          gesture.longPressTimer = setTimeout(() => { gesture.selectIntent = true; }, 220);
         }
-
         gesture.blocked = isBlockedTarget(e.target);
       };
 
       const onTouchMove = (e) => {
-        if (!gesture.active) return;
-        if (gesture.blocked) return;
-
+        if (!gesture.active || gesture.blocked) return;
         const t = e.touches[0];
         gesture.dx = t.clientX - gesture.startX;
         gesture.dy = t.clientY - gesture.startY;
-        const absX = Math.abs(gesture.dx);
-        const absY = Math.abs(gesture.dy);
+        const absX = Math.abs(gesture.dx); const absY = Math.abs(gesture.dy);
 
-        // If user moved significantly (>10px), cancel the "Selection Intent" timer
-        // This means it's a swipe, not a hold
-        if (gesture.inSelectable) {
-           if (absX > 10 || absY > 10) clearLongPress();
-        }
-
-        // CRITICAL: If intent is already selection or text is selected, STOP gesture logic
+        if (gesture.inSelectable) { if (absX > 10 || absY > 10) clearLongPress(); }
         if (gesture.inSelectable && (gesture.selectIntent || hasTextSelection())) return;
 
         if (!gesture.mode) {
@@ -1154,9 +1038,7 @@ createApp({
         }
 
         if (gesture.mode === 'h') {
-          if ((gesture.startedAtLeftEdge || gesture.startedAtRightEdge) && e.cancelable) {
-             e.preventDefault();
-          }
+          if ((gesture.startedAtLeftEdge || gesture.startedAtRightEdge) && e.cancelable) e.preventDefault();
           return;
         }
 
@@ -1175,19 +1057,12 @@ createApp({
         gesture.active = false;
         clearLongPress();
 
-        // CRITICAL PROTECTION for iOS Menu
-        // If text is selected OR we determined intent was selection -> DO NOTHING
         if (gesture.inSelectable && (gesture.selectIntent || hasTextSelection())) {
-          pullDistance.value = 0;
-          gesture.mode = null;
-          return; // Exit immediately, do not trigger date switch
+          pullDistance.value = 0; gesture.mode = null; return;
         }
 
         if (pullDistance.value > 60) {
-          pullDistance.value = 60;
-          isPullRefreshing.value = true;
-          loadData();
-          return;
+          pullDistance.value = 60; isPullRefreshing.value = true; loadData(); return;
         } else {
           pullDistance.value = 0;
         }
@@ -1204,19 +1079,14 @@ createApp({
                 else if (tab.value === 'expense') changeTabToAnalysis();
              }
              else if (tab.value === 'itinerary' && !gesture.startedAtLeftEdge && !gesture.startedAtRightEdge) {
-                if (gesture.dx < 0) switchDay('next');
-                else switchDay('prev');
+                if (gesture.dx < 0) switchDay('next'); else switchDay('prev');
              }
            }
         }
-
-        gesture.mode = null;
-        gesture.inSelectable = false;
-        gesture.selectIntent = false;
+        gesture.mode = null; gesture.inSelectable = false; gesture.selectIntent = false;
       };
 
       attachGestureListeners._handlers = { onTouchStart, onTouchMove, onTouchEnd };
-
       el.addEventListener('touchstart', onTouchStart, { passive: true });
       el.addEventListener('touchmove',  onTouchMove,  { passive: false });
       el.addEventListener('touchend',   onTouchEnd,   { passive: true });
@@ -1236,12 +1106,7 @@ createApp({
 
     const saveLocal = (data) => {
       try {
-        const toSave = {
-           expenses: expenses.value,
-           itinerary: itinerary.value,
-           members: members.value,
-           rates: rates.value
-        };
+        const toSave = { expenses: expenses.value, itinerary: itinerary.value, members: members.value, rates: rates.value };
         localStorage.setItem('tripData_v36', JSON.stringify(toSave));
         localStorage.setItem('syncQueue_v36', JSON.stringify(syncQueue.value));
       } catch(e){}
@@ -1274,37 +1139,26 @@ createApp({
         itinerary.value = res.itinerary;
         members.value = res.members;
         rates.value = res.rates;
-        saveLocal({}); // Save the fresh data with real IDs to local storage
+        saveLocal({});
         if (tab.value === 'analysis') scheduleRenderChart();
       }
     };
 
     const processSyncQueue = async () => {
       if (syncQueue.value.length === 0 || !navigator.onLine || isSyncing.value) return;
-      
       isSyncing.value = true;
       const queue = [...syncQueue.value];
       const remaining = [];
-
       for (const job of queue) {
         try {
           const apiAction = getBackendActionName(job.type, job.action);
           const res = await callApi(apiAction, job.data, 'POST');
-          
-          if (res) {
-            updateLocalData(res);
-          } else {
-            remaining.push(job);
-          }
-        } catch (e) {
-          remaining.push(job);
-        }
+          if (res) updateLocalData(res); else remaining.push(job);
+        } catch (e) { remaining.push(job); }
       }
-
       syncQueue.value = remaining;
       saveLocal({});
       isSyncing.value = false;
-      
       if (syncQueue.value.length === 0) loadData();
     };
 
@@ -1316,49 +1170,23 @@ createApp({
            const res = await callApi(apiAction, data, 'POST');
            if (!res) throw new Error("API Fail");
            updateLocalData(res);
-         } catch (e) {
-           syncQueue.value.push({ type, action, data });
-         } finally {
-           isSyncing.value = false;
-         }
-       } else {
-         syncQueue.value.push({ type, action, data });
-       }
+         } catch (e) { syncQueue.value.push({ type, action, data }); } finally { isSyncing.value = false; }
+       } else { syncQueue.value.push({ type, action, data }); }
        saveLocal({});
     };
 
     const loadData = async () => {
       if (!isPullRefreshing.value) isLoading.value = true;
-
       if (loadLocal()) {
-        if (isFirstLoad.value) {
-          nextTick(() => checkAndScrollToToday());
-          isFirstLoad.value = false;
-        }
+        if (isFirstLoad.value) { nextTick(() => checkAndScrollToToday()); isFirstLoad.value = false; }
         if (tab.value === 'analysis') scheduleRenderChart();
         setTimeout(() => { if (!isPullRefreshing.value) isLoading.value = false; }, 150);
       }
-
-      if (!navigator.onLine) {
-        isLoading.value = false;
-        isPullRefreshing.value = false;
-        pullDistance.value = 0;
-        return;
-      }
-
-      try {
-        const res = await callApi('getData');
-        updateLocalData(res);
-      } catch(e) {
-      } finally {
-        isLoading.value = false;
-        isPullRefreshing.value = false;
-        pullDistance.value = 0;
-      }
+      if (!navigator.onLine) { isLoading.value = false; isPullRefreshing.value = false; pullDistance.value = 0; return; }
+      try { const res = await callApi('getData'); updateLocalData(res); } catch(e) {} finally { isLoading.value = false; isPullRefreshing.value = false; pullDistance.value = 0; }
     };
 
     const selectDate = (date) => { selDate.value = date; scrollToDateBtn(date); };
-
     const scrollToDateBtn = (date) => {
       nextTick(() => {
         const btn = document.getElementById('date-btn-' + date);
@@ -1372,8 +1200,7 @@ createApp({
     const checkAndScrollToToday = () => {
       const d = new Date(); const offset = d.getTimezoneOffset() * 60000;
       const todayStr = new Date(d.getTime() - offset).toISOString().split('T')[0];
-      if (tripDates.some(x => x.date === todayStr)) selectDate(todayStr);
-      else selectDate(tripDates[0].date);
+      if (tripDates.some(x => x.date === todayStr)) selectDate(todayStr); else selectDate(tripDates[0].date);
     };
 
     const switchDay = (direction) => {
@@ -1383,39 +1210,27 @@ createApp({
     };
 
     const getDayInfo = (dStr) => {
-      const d = new Date(dStr);
-      const diff = Math.ceil((d - startDate)/86400000) + 1;
+      const d = new Date(dStr); const diff = Math.ceil((d - startDate)/86400000) + 1;
       return `DAY ${diff} · ${['週日','週一','週二','週三','週四','週五','週六'][d.getDay()]}`;
     };
 
     const getCategoryClass = (cat) => {
       switch(cat) {
-        case '交通': return 'cat-traffic';
-        case '住宿': return 'cat-stay';
-        case '景點': return 'cat-spot';
-        case '飲食': return 'cat-food';
-        default: return 'cat-note';
+        case '交通': return 'cat-traffic'; case '住宿': return 'cat-stay'; case '景點': return 'cat-spot'; case '飲食': return 'cat-food'; default: return 'cat-note';
       }
     };
 
     const getEvents = (d) => itinerary.value.filter(e => e.date === d).sort((a,b)=>a.startTime.localeCompare(b.startTime));
     const formatNumber = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-    // Dynamic Options for Filters
     const uniqueExpDates = computed(() => [...new Set(expenses.value.map(e => e.date))].sort());
     const uniqueItems = computed(() => [...new Set(expenses.value.map(e => e.item))].filter(Boolean));
     const uniqueLocations = computed(() => [...new Set(expenses.value.map(e => e.location))].filter(Boolean));
     const uniquePayments = computed(() => [...new Set(expenses.value.map(e => e.payment))].filter(Boolean));
 
-    const hasActiveFilters = computed(() => {
-        return Object.values(filters.value).some(v => v !== 'ALL');
-    });
+    const hasActiveFilters = computed(() => Object.values(filters.value).some(v => v !== 'ALL'));
+    const resetFilters = () => { filters.value = { date: 'ALL', item: 'ALL', payer: 'ALL', location: 'ALL', payment: 'ALL' }; };
 
-    const resetFilters = () => {
-        filters.value = { date: 'ALL', item: 'ALL', payer: 'ALL', location: 'ALL', payment: 'ALL' };
-    };
-
-    // Updated Filtering Logic
     const filteredExpenses = computed(() => {
         return expenses.value.filter(e => {
             if (filters.value.date !== 'ALL' && e.date !== filters.value.date) return false;
@@ -1432,8 +1247,7 @@ createApp({
       return Math.round(exp.amount * (rates.value[exp.currency] || 1));
     };
 
-    const publicSpent = computed(() => {
-      return expenses.value.reduce((sum, e) => {
+    const publicSpent = computed(() => expenses.value.reduce((sum, e) => {
         const amt = getAmountTWD(e);
         if (!e.involved || e.involved.length === 0) return sum;
         const perShare = amt / e.involved.length;
@@ -1441,16 +1255,13 @@ createApp({
         if (e.involved.includes('家齊')) bill += perShare;
         if (e.involved.includes('亭穎')) bill += perShare;
         return sum + bill;
-      }, 0);
-    });
+      }, 0));
 
-    const momSpent = computed(() => {
-      return expenses.value.reduce((sum, e) => {
+    const momSpent = computed(() => expenses.value.reduce((sum, e) => {
         const amt = getAmountTWD(e);
         if (e.involved && e.involved.includes('媽媽')) return sum + (amt / e.involved.length);
         return sum;
-      }, 0);
-    });
+      }, 0));
 
     const debts = computed(() => {
       if (members.value.length === 0) return [];
@@ -1459,36 +1270,26 @@ createApp({
         const amt = getAmountTWD(e);
         const split = e.involved || [];
         if (split.length > 0) {
-          bal[e.payer] += amt;
-          const share = amt / split.length;
+          bal[e.payer] += amt; const share = amt / split.length;
           split.forEach(p => { if (bal[p] !== undefined) bal[p] -= share; });
         }
       });
       let debtors=[], creditors=[];
-      for (const m in bal) {
-        if (bal[m] < -1) debtors.push({p:m, a:bal[m]});
-        if (bal[m] > 1) creditors.push({p:m, a:bal[m]});
-      }
-      debtors.sort((a,b)=>a.a-b.a);
-      creditors.sort((a,b)=>b.a-a.a);
+      for (const m in bal) { if (bal[m] < -1) debtors.push({p:m, a:bal[m]}); if (bal[m] > 1) creditors.push({p:m, a:bal[m]}); }
+      debtors.sort((a,b)=>a.a-b.a); creditors.sort((a,b)=>b.a-a.a);
       const res=[]; let i=0, j=0;
       while(i<debtors.length && j<creditors.length){
-        const d=debtors[i], c=creditors[j];
-        const amt=Math.min(Math.abs(d.a), c.a);
+        const d=debtors[i], c=creditors[j]; const amt=Math.min(Math.abs(d.a), c.a);
         res.push({from:d.p, to:c.p, amount:Math.round(amt)});
         d.a += amt; c.a -= amt;
-        if (Math.abs(d.a)<1) i++;
-        if (c.a<1) j++;
+        if (Math.abs(d.a)<1) i++; if (c.a<1) j++;
       }
       return res;
     });
 
     const getItemTagClass = (item) => {
       const s = String(item || '');
-      if (s.includes('交通')) {
-        if (s.includes('機票')) return 'tag-ticket';
-        return 'tag-traffic';
-      }
+      if (s.includes('交通')) { if (s.includes('機票')) return 'tag-ticket'; return 'tag-traffic'; }
       if (s.includes('住宿')) return 'tag-stay';
       if (['早餐','午餐','晚餐','零食'].some(k => s.includes(k))) return 'tag-food';
       if (['紀念品'].some(k => s.includes(k))) return 'tag-shop';
@@ -1496,91 +1297,33 @@ createApp({
     };
 
     /* Chart Logic */
-    let chartInstance = null;
-    const chartBusy = ref(false);
-    let chartTimer = null;
-
+    let chartInstance = null; const chartBusy = ref(false); let chartTimer = null;
     const buildStats = () => {
-      const stats = {};
-      const list = filteredExpenses.value;
-      for (let i=0;i<list.length;i++){
-        const e = list[i];
-        const key = e.item || '其他';
-        stats[key] = (stats[key] || 0) + getAmountTWD(e);
-      }
+      const stats = {}; const list = filteredExpenses.value;
+      for (let i=0;i<list.length;i++){ const e = list[i]; const key = e.item || '其他'; stats[key] = (stats[key] || 0) + getAmountTWD(e); }
       return stats;
     };
-
     const renderChart = () => {
-      const canvas = document.getElementById('expenseChart');
-      if (!canvas) return;
-
-      const stats = buildStats();
-      const labels = Object.keys(stats);
-      const data = Object.values(stats);
-
+      const canvas = document.getElementById('expenseChart'); if (!canvas) return;
+      const stats = buildStats(); const labels = Object.keys(stats); const data = Object.values(stats);
       const nordicColors = ['#38bdf8', '#818cf8', '#c084fc', '#f472b6', '#fb7185', '#22d3ee', '#34d399', '#a78bfa', '#fbcfe8', '#e2e8f0'];
-
       if (chartInstance) {
-        chartInstance.data.labels = labels;
-        chartInstance.data.datasets[0].data = data;
+        chartInstance.data.labels = labels; chartInstance.data.datasets[0].data = data;
         chartInstance.data.datasets[0].backgroundColor = labels.map((_,i)=>nordicColors[i % nordicColors.length]);
         chartInstance.update('none');
       } else {
         chartInstance = new Chart(canvas, {
           type: 'doughnut',
           data: { labels, datasets: [{ data, backgroundColor: labels.map((_,i)=>nordicColors[i % nordicColors.length]), borderWidth: 0, hoverOffset: 4 }] },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '70%',
-            animation: { duration: 800 },
-            plugins: {
-              legend: {
-                position: 'bottom',
-                labels: {
-                  font: { family: 'Inter', size: 11, weight: 'bold' },
-                  color: '#64748b',
-                  usePointStyle: true,
-                  padding: 12,
-                  boxWidth: 8
-                }
-              }
-            }
-          }
+          options: { responsive: true, maintainAspectRatio: false, cutout: '70%', animation: { duration: 800 }, plugins: { legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11, weight: 'bold' }, color: '#64748b', usePointStyle: true, padding: 12, boxWidth: 8 } } } }
         });
       }
       chartBusy.value = false;
     };
+    const scheduleRenderChart = async () => { if (tab.value !== 'analysis') return; chartBusy.value = true; if (chartTimer) clearTimeout(chartTimer); chartTimer = setTimeout(() => { nextTick(() => { renderChart(); }); }, 300); };
+    const changeTabToAnalysis = async () => { tab.value = 'analysis'; if (chartInstance) { chartInstance.destroy(); chartInstance = null; } scheduleRenderChart(); };
 
-    const scheduleRenderChart = async () => {
-      if (tab.value !== 'analysis') return;
-      chartBusy.value = true;
-
-      if (chartTimer) clearTimeout(chartTimer);
-      chartTimer = setTimeout(() => {
-        nextTick(() => {
-          renderChart();
-        });
-      }, 300);
-    };
-
-    const changeTabToAnalysis = async () => {
-      tab.value = 'analysis';
-      if (chartInstance) {
-        chartInstance.destroy();
-        chartInstance = null;
-      }
-      scheduleRenderChart();
-    };
-
-    // Watch filters change for chart update
-    watch(tab, (val) => {
-      if (val === 'analysis') scheduleRenderChart();
-      if (val === 'expense') {
-        newExp.value = { payer: '', location: '', item: '', payment: '', currency: 'NTD', amount: null, involved: [], note: '' };
-      }
-    });
+    watch(tab, (val) => { if (val === 'analysis') scheduleRenderChart(); if (val === 'expense') { newExp.value = { payer: '', location: '', item: '', payment: '', currency: 'NTD', amount: null, involved: [], note: '' }; } });
     watch(filters, () => { if (tab.value === 'analysis') scheduleRenderChart(); }, { deep: true });
     watch(expenses, () => { if (tab.value === 'analysis') scheduleRenderChart(); }, { deep: true });
 
@@ -1589,193 +1332,27 @@ createApp({
     const openEditItin = (evt) => { itinForm.value = { ...evt, newImageBase64: null, deleteImage: false }; isEditing.value = true; showItinModal.value = true; };
     const openEditExp = (exp) => { editExpForm.value = JSON.parse(JSON.stringify(exp)); showExpModal.value = true; };
     
-    // Image Handling
-    const handleImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-            itinForm.value.imgUrl = evt.target.result; // Preview
-            itinForm.value.newImageBase64 = evt.target.result; // For upload
-            itinForm.value.deleteImage = false;
-        };
-        reader.readAsDataURL(file);
-    };
+    const handleImageUpload = (e) => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (evt) => { itinForm.value.imgUrl = evt.target.result; itinForm.value.newImageBase64 = evt.target.result; itinForm.value.deleteImage = false; }; reader.readAsDataURL(file); };
+    const removeImage = () => { itinForm.value.imgUrl = ''; itinForm.value.newImageBase64 = null; itinForm.value.deleteImage = true; };
+    const viewImage = (url) => { viewingImg.value = url; showImgViewer.value = true; imgGesture.value = { startX: 0, startY: 0, currentX: 0, currentY: 0, scale: 1, isPulling: false, isZooming: false, startDistance: 0 }; };
+    const closeImgViewer = () => { if (imgViewerEl.value) imgViewerEl.value.style.transform = ''; const overlay = document.querySelector('.img-viewer-overlay'); if(overlay) overlay.style.backgroundColor = ''; showImgViewer.value = false; };
 
-    const removeImage = () => {
-        itinForm.value.imgUrl = '';
-        itinForm.value.newImageBase64 = null;
-        itinForm.value.deleteImage = true;
-    };
-
-    const viewImage = (url) => {
-        viewingImg.value = url;
-        showImgViewer.value = true;
-        imgGesture.value = { startX: 0, startY: 0, currentX: 0, currentY: 0, scale: 1, isPulling: false, isZooming: false, startDistance: 0 };
-    };
-    const closeImgViewer = () => { 
-        if (imgViewerEl.value) imgViewerEl.value.style.transform = '';
-        const overlay = document.querySelector('.img-viewer-overlay');
-        if(overlay) overlay.style.backgroundColor = '';
-        showImgViewer.value = false; 
-    };
-
-    // ===================================
-    // Actions
-    // ===================================
-
-    const deleteItin = async (evt) => { 
-      if(!confirm('確定刪除?')) return; 
-      
-      itinerary.value = itinerary.value.filter(x => x.row !== evt.row); 
-      
-      const pendingIdx = syncQueue.value.findIndex(job => 
-        job.type === 'itin' && job.action === 'add' && job.data.row === evt.row
-      );
-
-      if (pendingIdx !== -1) {
-        syncQueue.value.splice(pendingIdx, 1);
-        saveLocal({});
-      } else {
-        handleCRUD('itin', 'delete', { row: evt.row, sheetName: 'Itinerary' });
-      }
-    };
-
-    const deleteExp = async (exp) => { 
-      if(!confirm('確定刪除?')) return; 
-      expenses.value = expenses.value.filter(x => x.row !== exp.row); 
-      
-      const pendingIdx = syncQueue.value.findIndex(job => 
-        job.type === 'exp' && job.action === 'add' && job.data.row === exp.row
-      );
-
-      if (pendingIdx !== -1) {
-        syncQueue.value.splice(pendingIdx, 1);
-        saveLocal({});
-      } else {
-        handleCRUD('exp', 'delete', { row: exp.row, sheetName: 'Expenses' });
-      }
-    };
-
-    const submitItin = async () => {
-      if(!itinForm.value.title) return alert('請輸入標題');
-      const newRow = isEditing.value ? itinForm.value.row : Date.now();
-      const payload = { ...itinForm.value, row: newRow, date: selDate.value };
-      
-      if(isEditing.value) {
-         const idx = itinerary.value.findIndex(x => x.row === newRow);
-         if(idx !== -1) itinerary.value[idx] = payload;
-         handleCRUD('itin', 'edit', payload);
-      } else {
-         itinerary.value.push(payload);
-         handleCRUD('itin', 'add', payload);
-      }
-      showItinModal.value = false;
-    };
-
-    const submitExp = async () => {
-      if(!newExp.value.amount || !newExp.value.item) return alert('請輸入金額與項目');
-      const payload = { 
-        ...newExp.value, 
-        row: Date.now(), 
-        date: new Date().toISOString().split('T')[0], 
-        time: new Date().toTimeString().slice(0,5),
-        amountTWD: Math.round(newExp.value.amount * (rates.value[newExp.value.currency] || 1))
-      };
-      
-      expenses.value.unshift(payload);
-      handleCRUD('exp', 'add', payload);
-      
-      newExp.value.amount = null; newExp.value.item = ''; newExp.value.note = ''; newExp.value.involved = [];
-      alert('記帳成功');
-    };
-
-    const submitEditExp = async () => {
-        const idx = expenses.value.findIndex(e => e.row === editExpForm.value.row);
-        if(idx === -1) return;
-        
-        const updated = { ...editExpForm.value };
-        updated.amountTWD = Math.round(updated.amount * (rates.value[updated.currency] || 1));
-        
-        expenses.value[idx] = updated;
-        showExpModal.value = false;
-        handleCRUD('exp', 'edit', updated);
-    };
-
-    const saveRates = () => {
-       rates.value = { ...tempRates.value };
-       saveLocal({});
-       showRateModal.value = false;
-       callApi('updateRates', rates.value, 'POST');
-    };
-
-    const confirmClearSync = () => { 
-      if(confirm('確定要強制清空所有待上傳資料嗎？\n注意：這會導致離線新增的資料無法同步到伺服器。')) {
-        syncQueue.value = []; 
-        saveLocal({});
-      }
-    };
-    
+    const deleteItin = async (evt) => { if(!confirm('確定刪除?')) return; itinerary.value = itinerary.value.filter(x => x.row !== evt.row); const pendingIdx = syncQueue.value.findIndex(job => job.type === 'itin' && job.action === 'add' && job.data.row === evt.row); if (pendingIdx !== -1) { syncQueue.value.splice(pendingIdx, 1); saveLocal({}); } else { handleCRUD('itin', 'delete', { row: evt.row, sheetName: 'Itinerary' }); } };
+    const deleteExp = async (exp) => { if(!confirm('確定刪除?')) return; expenses.value = expenses.value.filter(x => x.row !== exp.row); const pendingIdx = syncQueue.value.findIndex(job => job.type === 'exp' && job.action === 'add' && job.data.row === exp.row); if (pendingIdx !== -1) { syncQueue.value.splice(pendingIdx, 1); saveLocal({}); } else { handleCRUD('exp', 'delete', { row: exp.row, sheetName: 'Expenses' }); } };
+    const submitItin = async () => { if(!itinForm.value.title) return alert('請輸入標題'); const newRow = isEditing.value ? itinForm.value.row : Date.now(); const payload = { ...itinForm.value, row: newRow, date: selDate.value }; if(isEditing.value) { const idx = itinerary.value.findIndex(x => x.row === newRow); if(idx !== -1) itinerary.value[idx] = payload; handleCRUD('itin', 'edit', payload); } else { itinerary.value.push(payload); handleCRUD('itin', 'add', payload); } showItinModal.value = false; };
+    const submitExp = async () => { if(!newExp.value.amount || !newExp.value.item) return alert('請輸入金額與項目'); const payload = { ...newExp.value, row: Date.now(), date: new Date().toISOString().split('T')[0], time: new Date().toTimeString().slice(0,5), amountTWD: Math.round(newExp.value.amount * (rates.value[newExp.value.currency] || 1)) }; expenses.value.unshift(payload); handleCRUD('exp', 'add', payload); newExp.value.amount = null; newExp.value.item = ''; newExp.value.note = ''; newExp.value.involved = []; alert('記帳成功'); };
+    const submitEditExp = async () => { const idx = expenses.value.findIndex(e => e.row === editExpForm.value.row); if(idx === -1) return; const updated = { ...editExpForm.value }; updated.amountTWD = Math.round(updated.amount * (rates.value[updated.currency] || 1)); expenses.value[idx] = updated; showExpModal.value = false; handleCRUD('exp', 'edit', updated); };
+    const saveRates = () => { rates.value = { ...tempRates.value }; saveLocal({}); showRateModal.value = false; callApi('updateRates', rates.value, 'POST'); };
+    const confirmClearSync = () => { if(confirm('確定要強制清空所有待上傳資料嗎？\n注意：這會導致離線新增的資料無法同步到伺服器。')) { syncQueue.value = []; saveLocal({}); } };
     const toggleSelectAll = () => { if(newExp.value.involved.length === members.value.length) newExp.value.involved=[]; else newExp.value.involved=[...members.value]; };
-    
-    const toggleSelectAllEdit = () => { 
-        if(!editExpForm.value.involved) editExpForm.value.involved = [];
-        if(editExpForm.value.involved.length === members.value.length) editExpForm.value.involved=[]; 
-        else editExpForm.value.involved=[...members.value]; 
-    };
+    const toggleSelectAllEdit = () => { if(!editExpForm.value.involved) editExpForm.value.involved = []; if(editExpForm.value.involved.length === members.value.length) editExpForm.value.involved=[]; else editExpForm.value.involved=[...members.value]; };
+    const updateOnlineStatus = () => { isOnline.value = navigator.onLine; if (isOnline.value) processSyncQueue(); };
+    const isItemPending = (rowId) => syncQueue.value.some(job => job.data.row === rowId);
 
-    const updateOnlineStatus = () => { 
-      isOnline.value = navigator.onLine; 
-      if (isOnline.value) processSyncQueue();
-    };
+    onMounted(async () => { initDate(); window.addEventListener('online', updateOnlineStatus); window.addEventListener('offline', updateOnlineStatus); await nextTick(); attachGestureListeners(); loadData(); if(navigator.onLine) processSyncQueue(); });
+    onBeforeUnmount(() => { detachGestureListeners(); window.removeEventListener('online', updateOnlineStatus); window.removeEventListener('offline', updateOnlineStatus); if (chartInstance) { chartInstance.destroy(); chartInstance = null; } });
 
-    const isItemPending = (rowId) => {
-      return syncQueue.value.some(job => job.data.row === rowId);
-    };
-
-    onMounted(async () => {
-      initDate();
-      window.addEventListener('online', updateOnlineStatus);
-      window.addEventListener('offline', updateOnlineStatus);
-      await nextTick();
-      attachGestureListeners();
-      loadData();
-      
-      // Try processing queue on load if online
-      if(navigator.onLine) processSyncQueue();
-    });
-
-    onBeforeUnmount(() => {
-      detachGestureListeners();
-      window.removeEventListener('online', updateOnlineStatus);
-      window.removeEventListener('offline', updateOnlineStatus);
-      if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
-    });
-
-    return {
-      tab, isLoading, isOnline, isSyncing, syncQueue,
-      dateContainer, scrollContainer,
-      todayDate, todayWeekday,
-      pullDistance, isPullRefreshing, refreshText,
-      tripStatus, tripDates, selDate,
-      itinerary, 
-      selectDate, getDayInfo, getEvents, getCategoryClass,
-      expenses, rates, members, 
-      filters, showFilterMenu, uniqueExpDates, uniqueItems, uniqueLocations, uniquePayments,
-      resetFilters, hasActiveFilters, filteredExpenses,
-      formatNumber, getAmountTWD,
-      publicSpent, momSpent, debts,
-      getItemTagClass,
-      chartBusy,
-      changeTabToAnalysis,
-      showRateModal, showItinModal, showExpModal, isEditing,
-      itinForm, newExp, editExpForm, tempRates,
-      openRateModal, openAddItin, openEditItin, openEditExp,
-      deleteItin, deleteExp, submitItin, submitExp, submitEditExp, saveRates, 
-      confirmClearSync, toggleSelectAll, toggleSelectAllEdit, isItemPending,
-      handleImageUpload, removeImage, viewImage, closeImgViewer, showImgViewer, viewingImg,
-      imgViewerEl, handleImgTouchStart, handleImgTouchMove, handleImgTouchEnd, imgGesture, toggleZoom
-    };
+    return { tab, isLoading, isOnline, isSyncing, syncQueue, dateContainer, scrollContainer, todayDate, todayWeekday, pullDistance, isPullRefreshing, refreshText, tripStatus, tripDates, selDate, itinerary, selectDate, getDayInfo, getEvents, getCategoryClass, expenses, rates, members, filters, showFilterMenu, uniqueExpDates, uniqueItems, uniqueLocations, uniquePayments, resetFilters, hasActiveFilters, filteredExpenses, formatNumber, getAmountTWD, publicSpent, momSpent, debts, getItemTagClass, chartBusy, changeTabToAnalysis, showRateModal, showItinModal, showExpModal, isEditing, itinForm, newExp, editExpForm, tempRates, openRateModal, openAddItin, openEditItin, openEditExp, deleteItin, deleteExp, submitItin, submitExp, submitEditExp, saveRates, confirmClearSync, toggleSelectAll, toggleSelectAllEdit, isItemPending, handleImageUpload, removeImage, viewImage, closeImgViewer, showImgViewer, viewingImg, imgViewerEl, handleImgTouchStart, handleImgTouchMove, handleImgTouchEnd, imgGesture, toggleZoom };
   }
 }).mount('#app');
 </script>
