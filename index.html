@@ -30,6 +30,7 @@
       background-color: #f0f9ff;
       color: #1e3a8a;
       overscroll-behavior: none;
+      /* 全局禁止選取以防 UI 閃爍，但在特定輸入區重新啟用 */
       user-select: none;
       -webkit-user-select: none;
       -webkit-tap-highlight-color: transparent;
@@ -173,6 +174,7 @@
     .cat-food    { border-left: 4px solid #f97316; background: white; }
     .cat-note    { border-left: 4px solid #64748b; background: white; }
 
+    /* Enhanced Selection Styles for iOS Safari */
     .allow-select {
       user-select: text !important;
       -webkit-user-select: text !important;
@@ -241,18 +243,29 @@
         cursor: zoom-in;
     }
 
-    /* Full Screen Image Viewer */
+    /* Full Screen Image Viewer Fixes */
     .img-viewer-overlay {
-        position: fixed; inset: 0; z-index: 100;
-        background: black;
+        position: fixed; inset: 0; z-index: 9999;
+        background: rgba(0, 0, 0, 0.95);
         display: flex; justify-content: center; align-items: center;
-        touch-action: none;
+        flex-direction: column; /* Allows adding a close button */
+        /* REMOVED touch-action: none to fix freezing */
     }
     .img-viewer-img {
-        max-width: 100%; max-height: 100%;
+        max-width: 100%; max-height: 90vh;
         object-fit: contain;
-        transform: scale(1);
-        transition: transform 0.2s;
+    }
+    .img-viewer-close {
+        position: absolute;
+        top: 20px; right: 20px;
+        width: 44px; height: 44px;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border-radius: 50%;
+        display: flex; justify-content: center; align-items: center;
+        font-size: 20px; font-weight: bold;
+        z-index: 10000;
+        cursor: pointer;
     }
   </style>
 </head>
@@ -411,7 +424,7 @@
           </div>
 
           <div class="flex gap-3">
-            <select v-model="newExp.currency" class="w-1/3 glass-input p-3 rounded-xl text-sm outline-none font-bold text-sky-700 bg-sky-50/50">
+            <select v-model="newExp.currency" class="w-1/3 glass-input p-3 rounded-xl text-sm font-bold bg-sky-50 text-sky-700">
               <option>NTD</option><option>NOK</option><option>ISK</option><option>EUR</option><option>GBP</option><option>AED</option>
             </select>
             <input type="number" v-model="newExp.amount" placeholder="金額"
@@ -605,6 +618,7 @@
 
   <Transition name="fade">
     <div v-if="showImgViewer" class="img-viewer-overlay" @click="closeImgViewer">
+        <div class="img-viewer-close" @click="closeImgViewer">✕</div>
         <img :src="viewingImg" class="img-viewer-img" @click.stop>
     </div>
   </Transition>
@@ -854,7 +868,7 @@ createApp({
     const showItinModal = ref(false);
     const showExpModal = ref(false);
     const isEditing = ref(false);
-    const itinForm = ref({ row: null, startTime: '09:00', endTime: '', category: '景點', title: '', location: '', link: '', note: '', imgUrl: '', newImageBase64: null, deleteImage: false });
+    const itinForm = ref({ row: null, startTime: '09:00', endTime: '', category: '景點', title: '', location: '', link: '', note: '', imgUrl: '', newImageBase64: null, deleteImage: false, imgId: '' });
     const newExp = ref({ payer: '', location: '', item: '', payment: '', currency: 'NTD', amount: null, involved: [], note: '' });
     const editExpForm = ref({});
     const tempRates = ref({});
@@ -1392,7 +1406,7 @@ createApp({
     watch(expenses, () => { if (tab.value === 'analysis') scheduleRenderChart(); }, { deep: true });
 
     const openRateModal = () => { tempRates.value = { ...rates.value }; showRateModal.value = true; };
-    const openAddItin = () => { itinForm.value = { row: null, startTime: '09:00', endTime: '', category: '景點', title: '', location: '', link: '', note: '', imgUrl: '', newImageBase64: null, deleteImage: false }; isEditing.value = false; showItinModal.value = true; };
+    const openAddItin = () => { itinForm.value = { row: null, startTime: '09:00', endTime: '', category: '景點', title: '', location: '', link: '', note: '', imgUrl: '', newImageBase64: null, deleteImage: false, imgId: '' }; isEditing.value = false; showItinModal.value = true; };
     const openEditItin = (evt) => { itinForm.value = { ...evt, newImageBase64: null, deleteImage: false }; isEditing.value = true; showItinModal.value = true; };
     const openEditExp = (exp) => { editExpForm.value = JSON.parse(JSON.stringify(exp)); showExpModal.value = true; };
     
