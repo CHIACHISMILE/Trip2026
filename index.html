@@ -3,11 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <title>2026挪威冰島之旅</title>
+  
   <meta name="referrer" content="no-referrer">
+  
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
+  
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="2026挪威冰島之旅">
+  
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  
   <meta name="theme-color" content="#dbeafe">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="https://img.icons8.com/color/180/snowflake.png">
@@ -21,51 +26,63 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    /* CSS Setup */
+    /* --- 全域重置與全螢幕設定 --- */
+    :root {
+      --safe-top: env(safe-area-inset-top);
+      --safe-bottom: env(safe-area-inset-bottom);
+    }
+
     html {
       height: 100%;
       width: 100%;
-      overflow: hidden;
-      /* 關鍵修正 3: 設定 html 背景色解決頂部白條 */
-      background-color: #dbeafe; 
+      /* 防止 iOS Safari 的橡皮筋迴彈效果露出底色 */
+      overscroll-behavior-y: none;
+      -webkit-text-size-adjust: 100%;
     }
 
     body {
+      margin: 0;
+      padding: 0;
       height: 100%;
       width: 100%;
-      overflow: hidden;
       font-family: 'Inter', 'Noto Sans TC', -apple-system, sans-serif;
-      /* 關鍵修正 4: 設定 body 背景色解決底部白條 */
-      background-color: #f0f9ff;
       color: #1e3a8a;
-      overscroll-behavior: none;
+      overflow: hidden; /* 禁止 body 捲動，交給內部容器 */
       user-select: none;
       -webkit-user-select: none;
       -webkit-tap-highlight-color: transparent;
-      touch-action: none; 
-      -webkit-touch-callout: default;
-    }
-
-    #fixed-bg {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100vw;
-      height: 100vh;
-      height: 100dvh; /* 確保填滿動態視口 */
+      /* 背景直接設在 body，確保全螢幕覆蓋 */
       background: linear-gradient(160deg, #dbeafe 0%, #eff6ff 40%, #f0f9ff 100%);
-      z-index: -1;
-      pointer-events: none;
+      background-attachment: fixed;
     }
 
     #app {
-      height: 100%;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      height: 100%; /* 使用 100% 繼承 body 高度 */
+      height: 100dvh; /* 加強：使用動態視窗高度 */
+      width: 100%;
       position: relative;
-      -webkit-touch-callout: none;
     }
 
+    /* --- 頂部 Header --- */
+    .app-header {
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+      /* 關鍵：Padding Top 加上安全區域，讓內容避開瀏海 */
+      padding-top: max(20px, var(--safe-top) + 10px);
+      padding-bottom: 16px;
+      padding-left: 24px;
+      padding-right: 24px;
+      border-radius: 0 0 2.5rem 2.5rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+      z-index: 20;
+      flex-shrink: 0; /* 防止被擠壓 */
+    }
+
+    /* --- 內容捲動區 --- */
     .scrollable-content {
       flex: 1;
       overflow-y: auto;
@@ -73,12 +90,12 @@
       -webkit-overflow-scrolling: touch;
       overscroll-behavior-y: contain;
       position: relative;
-      padding-top: 10px;
-      /* 底部保留安全距離 */
-      padding-bottom: calc(20px + env(safe-area-inset-bottom));
-      touch-action: pan-y;
+      padding: 16px;
+      /* 關鍵：底部留白加上安全區域，讓最後一個項目不被橫條擋住 */
+      padding-bottom: calc(20px + var(--safe-bottom));
     }
 
+    /* --- 元件樣式 --- */
     .glass-card {
       background: rgba(255, 255, 255, 0.85);
       backdrop-filter: blur(16px);
@@ -86,9 +103,9 @@
       border: 1px solid rgba(255, 255, 255, 0.8);
       border-radius: 20px;
       box-shadow: 0 4px 15px rgba(148, 163, 184, 0.08);
-      transition: transform 0.15s ease-out;
+      transition: transform 0.1s ease-out;
     }
-    .glass-card:active { transform: scale(0.99); }
+    .glass-card:active { transform: scale(0.98); }
 
     .glass-input {
       background: rgba(255, 255, 255, 0.6);
@@ -122,6 +139,8 @@
       -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid rgba(255, 255, 255, 0.5);
       box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.05);
+      flex-shrink: 0;
+      z-index: 10;
     }
     .tab-btn { color: #94a3b8; transition: all 0.3s; }
     .tab-active { color: #0284c7; position: relative; }
@@ -135,9 +154,6 @@
       box-shadow: 0 -2px 8px rgba(2, 132, 199, 0.5);
     }
 
-    .fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
-    .fade-enter-from, .fade-leave-to { opacity: 0; }
-
     .pull-indicator {
       height: 0;
       display: flex;
@@ -149,7 +165,8 @@
       font-weight: 600;
       font-size: 0.8rem;
       transition: height 0.12s ease-out;
-      padding-top: env(safe-area-inset-top);
+      /* 指示器也要避開瀏海 */
+      padding-top: var(--safe-top); 
       box-sizing: content-box;
     }
 
@@ -202,8 +219,7 @@
     @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
     .pending-sync { opacity: 0.85; border: 2px dashed #f59e0b !important; position: relative; }
-    .pending-badge { display: none; }
-
+    
     .tag { display:inline-flex; align-items:center; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
     .tag-food { background:#fff7ed; color:#c2410c; border:1px solid #ffedd5; }
     .tag-stay { background:#fefce8; color:#a16207; border:1px solid #fef9c3; }
@@ -227,13 +243,13 @@
     }
     .filter-chip:hover { background: #bae6fd; }
 
-    /* Modal Styling */
+    /* Modal Transitions */
     .modal-enter-active, .modal-leave-active { transition: opacity 0.3s ease; }
     .modal-enter-from, .modal-leave-to { opacity: 0; }
     .modal-enter-active .modal-content, .modal-leave-active .modal-content { transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
     .modal-enter-from .modal-content, .modal-leave-to .modal-content { transform: scale(0.9) translateY(20px); }
     
-    /* Image Upload Styles */
+    /* Image Upload & Preview */
     .img-upload-btn { position: relative; overflow: hidden; }
     .img-upload-btn input[type=file] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
     .img-preview {
@@ -251,16 +267,17 @@
         cursor: zoom-in;
     }
 
-    /* --- FIXED IMAGE VIEWER STYLES --- */
+    /* --- Image Viewer (Full Screen) --- */
     .img-viewer-overlay {
         position: fixed; inset: 0; z-index: 9999;
-        background: rgba(0, 0, 0, 1); /* 全黑背景，更像原生相簿 */
+        background: rgba(0, 0, 0, 1);
         display: flex; justify-content: center; align-items: center;
         flex-direction: column;
-        padding-top: env(safe-area-inset-top);
-        padding-bottom: env(safe-area-inset-bottom);
+        /* Padding for safe areas */
+        padding-top: var(--safe-top);
+        padding-bottom: var(--safe-bottom);
         transition: background 0.2s;
-        touch-action: none; /* 關鍵：接管所有觸控 */
+        touch-action: none;
         overflow: hidden;
     }
     .img-viewer-img {
@@ -271,10 +288,10 @@
     }
     .img-viewer-close {
         position: absolute;
-        top: max(20px, env(safe-area-inset-top) + 20px); 
+        top: max(20px, var(--safe-top) + 20px); /* 確保按鈕在瀏海下方 */
         right: 20px;
         width: 44px; height: 44px;
-        background: rgba(50, 50, 50, 0.8); /* 深色背景 */
+        background: rgba(50, 50, 50, 0.8);
         color: white;
         border-radius: 50%;
         display: flex; justify-content: center; align-items: center;
@@ -287,7 +304,7 @@
     
     .pull-hint {
         position: absolute;
-        top: max(80px, env(safe-area-inset-top) + 80px);
+        top: max(80px, var(--safe-top) + 80px);
         color: rgba(255,255,255,0.6);
         font-size: 13px;
         font-weight: bold;
@@ -303,16 +320,12 @@
 </head>
 
 <body>
-<div id="fixed-bg"></div>
-
 <div id="app">
   <div class="pull-indicator" :style="{ height: pullDistance + 'px' }">
     <span v-if="pullDistance > 20">{{ refreshText }}</span>
   </div>
 
-  <div class="px-6 pb-4 rounded-b-[2.5rem] shadow-sm swipe-protected relative z-20"
-       style="background: rgba(255,255,255,0.6); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-bottom: 1px solid rgba(255,255,255,0.4);
-       padding-top: max(20px, env(safe-area-inset-top) + 12px);">
+  <div class="app-header">
     <div class="flex justify-between items-center">
       <h1 class="text-xl font-black tracking-tighter text-slate-800 drop-shadow-sm">2026 挪威冰島之旅</h1>
       <div class="text-right">
@@ -345,7 +358,7 @@
     <button @click="changeTabToAnalysis" :class="['flex-1 p-4 tab-btn', tab==='analysis'?'tab-active':'']">分析</button>
   </div>
 
-  <div class="scrollable-content p-4" ref="scrollContainer">
+  <div class="scrollable-content" ref="scrollContainer">
     <Transition name="fade" mode="out-in">
       
       <div v-if="tab==='itinerary'" key="itinerary">
@@ -426,7 +439,6 @@
                   class="w-full py-4 mt-4 border-2 border-dashed border-sky-200 text-sky-400 rounded-2xl font-bold hover:bg-sky-50 transition swipe-protected">
             + 新增行程
           </button>
-          <div class="h-10"></div>
         </div>
       </div>
 
@@ -655,7 +667,9 @@
          @touchstart="handleImgTouchStart"
          @touchmove="handleImgTouchMove"
          @touchend="handleImgTouchEnd"
-         @dblclick="toggleZoom"> <div v-if="imgGesture.scale === 1" :class="['pull-hint', {'show-hint': imgGesture.isPulling}]">↓ 下拉關閉</div>
+         @dblclick="toggleZoom">
+        
+        <div v-if="imgGesture.scale === 1" :class="['pull-hint', {'show-hint': imgGesture.isPulling}]">↓ 下拉關閉</div>
         
         <div class="img-viewer-close" @click.stop="closeImgViewer">✕</div>
         
@@ -919,9 +933,7 @@ createApp({
             if (imgViewerEl.value) {
                 imgViewerEl.value.style.transform = `scale(${newScale}) translate(${imgGesture.value.currentX}px, ${imgGesture.value.currentY}px)`;
             }
-            // Store tentative scale (applied fully on end for simplicity, or continuously)
-            // Simplified: we just visual transform here, commit on end is tricky without matrix
-            // For robust simple zoom: just apply scale visually
+            // Store tentative scale
             imgViewerEl.value.style.transform = `scale(${newScale})`;
             imgGesture.value.tempScale = newScale; 
         } 
@@ -942,7 +954,6 @@ createApp({
                 }
             } else {
                 // Pan logic (simplified: moving image when zoomed)
-                // Note: proper panning requires tracking limits, this is basic free-move
                 if (imgViewerEl.value) {
                      imgViewerEl.value.style.transform = `scale(${imgGesture.value.scale}) translate(${dx/imgGesture.value.scale}px, ${dy/imgGesture.value.scale}px)`;
                 }
