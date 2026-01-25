@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>2026挪威冰島之旅</title>
+  <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="2026挪威冰島之旅">
@@ -29,7 +30,6 @@
       background-color: #f0f9ff;
       color: #1e3a8a;
       overscroll-behavior: none;
-      /* Global selection disabled to prevent UI flickering */
       user-select: none;
       -webkit-user-select: none;
       -webkit-tap-highlight-color: transparent;
@@ -173,7 +173,6 @@
     .cat-food    { border-left: 4px solid #f97316; background: white; }
     .cat-note    { border-left: 4px solid #64748b; background: white; }
 
-    /* Enhanced Selection Styles for iOS Safari */
     .allow-select {
       user-select: text !important;
       -webkit-user-select: text !important;
@@ -203,7 +202,6 @@
     .tag-shop { background:#fdf2f8; color:#be185d; border:1px solid #fce7f3; }
     .tag-other { background:#f1f5f9; color:#334155; border:1px solid #e2e8f0; }
 
-    /* Filter Chips */
     .filter-chip {
         display: inline-flex;
         align-items: center;
@@ -226,36 +224,35 @@
     .modal-enter-from .modal-content, .modal-leave-to .modal-content { transform: scale(0.9) translateY(20px); }
     
     /* Image Upload Styles */
-    .img-upload-btn {
-        position: relative;
-        overflow: hidden;
-    }
-    .img-upload-btn input[type=file] {
-        position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
-        opacity: 0; cursor: pointer;
-    }
+    .img-upload-btn { position: relative; overflow: hidden; }
+    .img-upload-btn input[type=file] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
     .img-preview {
-        width: 100%;
-        height: 120px;
-        object-fit: cover;
-        border-radius: 12px;
+        width: 100%; height: 120px;
+        object-fit: cover; border-radius: 12px;
         border: 2px dashed #cbd5e1;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        color: #94a3b8;
-        font-size: 12px;
-        font-weight: bold;
+        display: flex; justify-content: center; align-items: center;
+        color: #94a3b8; font-size: 12px; font-weight: bold;
         background: #f8fafc;
     }
     .itinerary-img {
-        width: 100%;
-        max-height: 200px;
-        object-fit: cover;
-        border-radius: 12px;
-        margin-top: 12px;
+        width: 100%; max-height: 200px; object-fit: cover;
+        border-radius: 12px; margin-top: 12px;
         border: 1px solid rgba(0,0,0,0.05);
+        cursor: zoom-in;
+    }
+
+    /* Full Screen Image Viewer */
+    .img-viewer-overlay {
+        position: fixed; inset: 0; z-index: 100;
+        background: black;
+        display: flex; justify-content: center; align-items: center;
+        touch-action: none;
+    }
+    .img-viewer-img {
+        max-width: 100%; max-height: 100%;
+        object-fit: contain;
+        transform: scale(1);
+        transition: transform 0.2s;
     }
   </style>
 </head>
@@ -357,7 +354,8 @@
               </div>
 
               <div v-if="evt.imgUrl" class="mt-2">
-                  <img :src="evt.imgUrl" class="itinerary-img" loading="lazy" alt="行程圖片">
+                  <img :src="evt.imgUrl" class="itinerary-img" loading="lazy" alt="行程圖片"
+                       @click.stop="viewImage(evt.imgUrl)">
               </div>
 
               <div
@@ -605,6 +603,12 @@
     </Transition>
   </div>
 
+  <Transition name="fade">
+    <div v-if="showImgViewer" class="img-viewer-overlay" @click="closeImgViewer">
+        <img :src="viewingImg" class="img-viewer-img" @click.stop>
+    </div>
+  </Transition>
+
   <Transition name="modal">
     <div v-if="showItinModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 swipe-protected">
       <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" @click="showItinModal=false"></div>
@@ -644,8 +648,11 @@
                 <div v-if="!itinForm.imgUrl" class="img-preview">
                     <span>+ 選擇照片</span>
                 </div>
-                <img v-else :src="itinForm.imgUrl" class="w-full h-32 object-cover rounded-xl border border-slate-200">
-                <input type="file" accept="image/*" @change="handleImageUpload">
+                <div v-else class="relative">
+                    <img :src="itinForm.imgUrl" class="w-full h-32 object-cover rounded-xl border border-slate-200">
+                    <button @click.prevent="removeImage" class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 shadow-md text-xs font-bold px-2">移除</button>
+                </div>
+                <input type="file" accept="image/*" @change="handleImageUpload" v-if="!itinForm.imgUrl || itinForm.newImageBase64">
             </div>
           </div>
           <div>
@@ -806,6 +813,10 @@ createApp({
     const todayDate = ref('');
     const todayWeekday = ref('');
 
+    // Image Viewer State
+    const showImgViewer = ref(false);
+    const viewingImg = ref('');
+
     const tripStatus = computed(() => {
       const now = new Date();
       const start = new Date('2026-08-30');
@@ -843,7 +854,7 @@ createApp({
     const showItinModal = ref(false);
     const showExpModal = ref(false);
     const isEditing = ref(false);
-    const itinForm = ref({ row: null, startTime: '09:00', endTime: '', category: '景點', title: '', location: '', link: '', note: '', imgUrl: '', newImageBase64: null });
+    const itinForm = ref({ row: null, startTime: '09:00', endTime: '', category: '景點', title: '', location: '', link: '', note: '', imgUrl: '', newImageBase64: null, deleteImage: false });
     const newExp = ref({ payer: '', location: '', item: '', payment: '', currency: 'NTD', amount: null, involved: [], note: '' });
     const editExpForm = ref({});
     const tempRates = ref({});
@@ -1381,8 +1392,8 @@ createApp({
     watch(expenses, () => { if (tab.value === 'analysis') scheduleRenderChart(); }, { deep: true });
 
     const openRateModal = () => { tempRates.value = { ...rates.value }; showRateModal.value = true; };
-    const openAddItin = () => { itinForm.value = { row: null, startTime: '09:00', endTime: '', category: '景點', title: '', location: '', link: '', note: '', imgUrl: '', newImageBase64: null }; isEditing.value = false; showItinModal.value = true; };
-    const openEditItin = (evt) => { itinForm.value = { ...evt, newImageBase64: null }; isEditing.value = true; showItinModal.value = true; };
+    const openAddItin = () => { itinForm.value = { row: null, startTime: '09:00', endTime: '', category: '景點', title: '', location: '', link: '', note: '', imgUrl: '', newImageBase64: null, deleteImage: false }; isEditing.value = false; showItinModal.value = true; };
+    const openEditItin = (evt) => { itinForm.value = { ...evt, newImageBase64: null, deleteImage: false }; isEditing.value = true; showItinModal.value = true; };
     const openEditExp = (exp) => { editExpForm.value = JSON.parse(JSON.stringify(exp)); showExpModal.value = true; };
     
     // Image Handling
@@ -1393,9 +1404,22 @@ createApp({
         reader.onload = (evt) => {
             itinForm.value.imgUrl = evt.target.result; // Preview
             itinForm.value.newImageBase64 = evt.target.result; // For upload
+            itinForm.value.deleteImage = false;
         };
         reader.readAsDataURL(file);
     };
+
+    const removeImage = () => {
+        itinForm.value.imgUrl = '';
+        itinForm.value.newImageBase64 = null;
+        itinForm.value.deleteImage = true;
+    };
+
+    const viewImage = (url) => {
+        viewingImg.value = url;
+        showImgViewer.value = true;
+    };
+    const closeImgViewer = () => { showImgViewer.value = false; };
 
     // ===================================
     // Actions
@@ -1438,9 +1462,6 @@ createApp({
       if(!itinForm.value.title) return alert('請輸入標題');
       const newRow = isEditing.value ? itinForm.value.row : Date.now();
       const payload = { ...itinForm.value, row: newRow, date: selDate.value };
-      
-      // If we have a new image base64, we can't save it to local storage easily (too big)
-      // So offline support for images is tricky. For now, we assume basic functionality.
       
       if(isEditing.value) {
          const idx = itinerary.value.findIndex(x => x.row === newRow);
@@ -1553,7 +1574,7 @@ createApp({
       openRateModal, openAddItin, openEditItin, openEditExp,
       deleteItin, deleteExp, submitItin, submitExp, submitEditExp, saveRates, 
       confirmClearSync, toggleSelectAll, toggleSelectAllEdit, isItemPending,
-      handleImageUpload
+      handleImageUpload, removeImage, viewImage, closeImgViewer, showImgViewer, viewingImg
     };
   }
 }).mount('#app');
