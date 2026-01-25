@@ -224,6 +224,39 @@
     .modal-enter-from, .modal-leave-to { opacity: 0; }
     .modal-enter-active .modal-content, .modal-leave-active .modal-content { transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
     .modal-enter-from .modal-content, .modal-leave-to .modal-content { transform: scale(0.9) translateY(20px); }
+    
+    /* Image Upload Styles */
+    .img-upload-btn {
+        position: relative;
+        overflow: hidden;
+    }
+    .img-upload-btn input[type=file] {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        opacity: 0; cursor: pointer;
+    }
+    .img-preview {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 12px;
+        border: 2px dashed #cbd5e1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #94a3b8;
+        font-size: 12px;
+        font-weight: bold;
+        background: #f8fafc;
+    }
+    .itinerary-img {
+        width: 100%;
+        max-height: 200px;
+        object-fit: cover;
+        border-radius: 12px;
+        margin-top: 12px;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
   </style>
 </head>
 
@@ -321,6 +354,10 @@
                 <a :href="'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(evt.location)"
                    target="_blank"
                    class="map-btn swipe-protected">地圖</a>
+              </div>
+
+              <div v-if="evt.imgUrl" class="mt-2">
+                  <img :src="evt.imgUrl" class="itinerary-img" loading="lazy" alt="行程圖片">
               </div>
 
               <div
@@ -602,6 +639,16 @@
             <input v-model="itinForm.title" class="w-full glass-input p-3 rounded-xl mt-1 outline-none font-bold placeholder-slate-300" placeholder="行程名稱">
           </div>
           <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase">圖片 (點擊上傳)</label>
+            <div class="img-upload-btn mt-1">
+                <div v-if="!itinForm.imgUrl" class="img-preview">
+                    <span>+ 選擇照片</span>
+                </div>
+                <img v-else :src="itinForm.imgUrl" class="w-full h-32 object-cover rounded-xl border border-slate-200">
+                <input type="file" accept="image/*" @change="handleImageUpload">
+            </div>
+          </div>
+          <div>
             <label class="text-[10px] font-bold text-slate-400 uppercase">地點 (Google Maps)</label>
             <input v-model="itinForm.location" class="w-full glass-input p-3 rounded-xl mt-1 outline-none text-sm" placeholder="輸入地點">
           </div>
@@ -796,7 +843,7 @@ createApp({
     const showItinModal = ref(false);
     const showExpModal = ref(false);
     const isEditing = ref(false);
-    const itinForm = ref({ row: null, startTime: '09:00', endTime: '', category: '景點', title: '', location: '', link: '', note: '' });
+    const itinForm = ref({ row: null, startTime: '09:00', endTime: '', category: '景點', title: '', location: '', link: '', note: '', imgUrl: '', newImageBase64: null });
     const newExp = ref({ payer: '', location: '', item: '', payment: '', currency: 'NTD', amount: null, involved: [], note: '' });
     const editExpForm = ref({});
     const tempRates = ref({});
@@ -1334,10 +1381,22 @@ createApp({
     watch(expenses, () => { if (tab.value === 'analysis') scheduleRenderChart(); }, { deep: true });
 
     const openRateModal = () => { tempRates.value = { ...rates.value }; showRateModal.value = true; };
-    const openAddItin = () => { itinForm.value = { row: null, startTime: '09:00', endTime: '', category: '景點', title: '', location: '', link: '', note: '' }; isEditing.value = false; showItinModal.value = true; };
-    const openEditItin = (evt) => { itinForm.value = { ...evt }; isEditing.value = true; showItinModal.value = true; };
+    const openAddItin = () => { itinForm.value = { row: null, startTime: '09:00', endTime: '', category: '景點', title: '', location: '', link: '', note: '', imgUrl: '', newImageBase64: null }; isEditing.value = false; showItinModal.value = true; };
+    const openEditItin = (evt) => { itinForm.value = { ...evt, newImageBase64: null }; isEditing.value = true; showItinModal.value = true; };
     const openEditExp = (exp) => { editExpForm.value = JSON.parse(JSON.stringify(exp)); showExpModal.value = true; };
     
+    // Image Handling
+    const handleImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            itinForm.value.imgUrl = evt.target.result; // Preview
+            itinForm.value.newImageBase64 = evt.target.result; // For upload
+        };
+        reader.readAsDataURL(file);
+    };
+
     // ===================================
     // Actions
     // ===================================
@@ -1379,6 +1438,9 @@ createApp({
       if(!itinForm.value.title) return alert('請輸入標題');
       const newRow = isEditing.value ? itinForm.value.row : Date.now();
       const payload = { ...itinForm.value, row: newRow, date: selDate.value };
+      
+      // If we have a new image base64, we can't save it to local storage easily (too big)
+      // So offline support for images is tricky. For now, we assume basic functionality.
       
       if(isEditing.value) {
          const idx = itinerary.value.findIndex(x => x.row === newRow);
@@ -1490,7 +1552,8 @@ createApp({
       itinForm, newExp, editExpForm, tempRates,
       openRateModal, openAddItin, openEditItin, openEditExp,
       deleteItin, deleteExp, submitItin, submitExp, submitEditExp, saveRates, 
-      confirmClearSync, toggleSelectAll, toggleSelectAllEdit, isItemPending
+      confirmClearSync, toggleSelectAll, toggleSelectAllEdit, isItemPending,
+      handleImageUpload
     };
   }
 }).mount('#app');
