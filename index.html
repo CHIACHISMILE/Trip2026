@@ -3,15 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <title>2026挪威冰島之旅</title>
-  
   <meta name="referrer" content="no-referrer">
-
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
-  
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="2026挪威冰島之旅">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  
   <meta name="theme-color" content="#dbeafe">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="https://img.icons8.com/color/180/snowflake.png">
@@ -26,28 +22,27 @@
 
   <style>
     /* CSS Setup */
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
     html, body {
-      height: 100%;
+      height: 100dvh;
       width: 100%;
-      overflow: hidden; /* 禁止整頁捲動，只允許內部捲動 */
+      overflow: hidden;
       font-family: 'Inter', 'Noto Sans TC', -apple-system, sans-serif;
       background-color: #f0f9ff;
       color: #1e3a8a;
       overscroll-behavior: none;
       user-select: none;
       -webkit-user-select: none;
-      touch-action: none; 
+      -webkit-tap-highlight-color: transparent;
+      touch-action: none; /* 禁止瀏覽器預設縮放行為，交給 JS 處理 */
     }
 
     body { -webkit-touch-callout: default; }
 
-    /* 關鍵 5：獨立背景層，強制撐滿整個物理螢幕 (包含瀏海區) */
     #fixed-bg {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      width: 100vw; height: 100vh;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
       background: linear-gradient(160deg, #dbeafe 0%, #eff6ff 40%, #f0f9ff 100%);
       z-index: -1;
       pointer-events: none;
@@ -57,42 +52,21 @@
       height: 100%;
       display: flex;
       flex-direction: column;
-      position: relative;
-      /* 確保 App 容器本身也撐滿 */
-      width: 100%;
       overflow: hidden;
+      position: relative;
+      -webkit-touch-callout: none;
     }
 
-    /* 頂部標題區：利用 padding 避開瀏海 */
-    .header-section {
-        background: rgba(255,255,255,0.6); 
-        backdrop-filter: blur(25px); 
-        -webkit-backdrop-filter: blur(25px); 
-        border-bottom: 1px solid rgba(255,255,255,0.4);
-        /* 關鍵：上邊距 = 系統安全距離 + 自訂間距 */
-        padding-top: calc(env(safe-area-inset-top) + 12px);
-        padding-bottom: 16px;
-        padding-left: 24px;
-        padding-right: 24px;
-        border-radius: 0 0 2.5rem 2.5rem;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.02);
-        z-index: 20;
-        flex-shrink: 0; /* 防止被擠壓 */
-    }
-
-    /* 內容捲動區 */
     .scrollable-content {
-      flex: 1; /* 自動填滿剩餘高度 */
+      flex: 1;
       overflow-y: auto;
       overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior-y: contain;
       position: relative;
       padding-top: 10px;
-      padding-left: 16px;
-      padding-right: 16px;
-      /* 關鍵：底部邊距 = 系統安全距離 (Home Bar) + 自訂間距 */
-      padding-bottom: calc(env(safe-area-inset-bottom) + 80px); 
+      /* 確保內容填滿到底部安全區域 */
+      padding-bottom: calc(20px + env(safe-area-inset-bottom));
       touch-action: pan-y;
     }
 
@@ -139,8 +113,6 @@
       -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid rgba(255, 255, 255, 0.5);
       box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.05);
-      flex-shrink: 0;
-      /* 若需要 Tab Bar 貼底，可以加 padding-bottom: env(safe-area-inset-bottom) */
     }
     .tab-btn { color: #94a3b8; transition: all 0.3s; }
     .tab-active { color: #0284c7; position: relative; }
@@ -168,7 +140,6 @@
       font-weight: 600;
       font-size: 0.8rem;
       transition: height 0.12s ease-out;
-      /* 確保下拉提示不會被瀏海擋住 */
       padding-top: env(safe-area-inset-top);
       box-sizing: content-box;
     }
@@ -291,7 +262,6 @@
     }
     .img-viewer-close {
         position: absolute;
-        /* 安全區域設定：保證按鈕不會被瀏海擋住 */
         top: max(20px, env(safe-area-inset-top) + 20px); 
         right: 20px;
         width: 44px; height: 44px;
@@ -331,7 +301,9 @@
     <span v-if="pullDistance > 20">{{ refreshText }}</span>
   </div>
 
-  <div class="header-section swipe-protected">
+  <div class="px-6 pb-4 rounded-b-[2.5rem] shadow-sm swipe-protected relative z-20"
+       style="background: rgba(255,255,255,0.6); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-bottom: 1px solid rgba(255,255,255,0.4);
+       padding-top: max(20px, env(safe-area-inset-top) + 12px);">
     <div class="flex justify-between items-center">
       <h1 class="text-xl font-black tracking-tighter text-slate-800 drop-shadow-sm">2026 挪威冰島之旅</h1>
       <div class="text-right">
@@ -364,7 +336,7 @@
     <button @click="changeTabToAnalysis" :class="['flex-1 p-4 tab-btn', tab==='analysis'?'tab-active':'']">分析</button>
   </div>
 
-  <div class="scrollable-content" ref="scrollContainer">
+  <div class="scrollable-content p-4" ref="scrollContainer">
     <Transition name="fade" mode="out-in">
       
       <div v-if="tab==='itinerary'" key="itinerary">
@@ -1355,7 +1327,12 @@ createApp({
       }
     };
 
-    const selectDate = (date) => { selDate.value = date; scrollToDateBtn(date); };
+    const selectDate = (date) => { 
+        selDate.value = date; 
+        scrollToDateBtn(date);
+        // Scroll content to top on date switch
+        if(scrollContainer.value) scrollContainer.value.scrollTop = 0;
+    };
 
     const scrollToDateBtn = (date) => {
       nextTick(() => {
