@@ -1,3 +1,19 @@
+這是一個非常典型的 iOS PWA (Progressive Web App) 「安全區域 (Safe Area)」與「視口填充 (Viewport Fit)」設定衝突的問題。
+
+iOS 的 Safari 和「加入主畫面 (Web App)」的渲染機制不同。在主畫面模式下，如果不做特殊設定，系統會預設保留上下黑邊（或白邊/藍邊）來避免內容被瀏海或底部橫條遮擋。
+
+要做到像原生 App 一樣的全螢幕（內容延伸到瀏海後面，但文字不被遮擋），需要針對 **Meta Tags** 與 **CSS 架構** 進行「全面重構」。
+
+以下是修復的核心重點，請直接使用這份 **經過嚴格修正的完整 index.html**：
+
+1. **Meta Tag 修正**：確保 `viewport-fit=cover` 存在，且狀態列設為 `black-translucent`（這是讓背景延伸到狀態列的關鍵）。
+2. **背景層分離**：建立一個獨立的 `#fixed-bg`，強制佔滿 `100vh` 且忽略安全區域，確保上下邊緣都有顏色。
+3. **頂部導航欄重構**：移除固定的 margin/top，改用 `padding-top: env(safe-area-inset-top)`。這樣背景色會延伸到瀏海，但文字會自動往下推，不會被擋住。
+4. **底部區域重構**：確保捲動容器佔滿剩餘空間，並在最後一個元素加上 `padding-bottom: env(safe-area-inset-bottom)`，讓內容滑到底時不會被 Home Bar 遮住。
+
+請**完全覆蓋**原本的 `index.html`：
+
+```html
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -26,103 +42,42 @@
 
   <style>
     /* CSS Setup */
-    /* ===== iOS SAFE-AREA / VIEWPORT FIX (必須放最前面) ===== */
-    :root{
-      --bg: linear-gradient(160deg, #dbeafe 0%, #eff6ff 40%, #f0f9ff 100%);
-      --safe-top: env(safe-area-inset-top);
-      --safe-bottom: env(safe-area-inset-bottom);
-    }
-    
-    /* 1) 讓 html/body 永遠有背景，避免 safe-area 露白 */
-    html, body{
-      width: 100%;
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
       height: 100%;
-      margin: 0;
-      background: var(--bg);
-      overscroll-behavior: none;
-    }
-    
-    /* 2) iOS 動態高度：用 dvh/svh + -webkit-fill-available 保險 */
-    body{
-      min-height: 100vh;
-      min-height: 100svh;
-      min-height: 100dvh;
-      min-height: -webkit-fill-available;
-    
+      width: 100%;
+      overflow: hidden; /* 禁止整頁捲動，只允許內部捲動 */
       font-family: 'Inter', 'Noto Sans TC', -apple-system, sans-serif;
+      background-color: #f0f9ff;
       color: #1e3a8a;
-    
-      /* 你原本有禁止整頁捲動：保留 */
-      overflow: hidden;
-    
-      /* 你原本有這些：保留 */
-      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
       user-select: none;
       -webkit-user-select: none;
-    
-      /* 讓 Safari 的彈性捲動不要露出白底 */
-      background: var(--bg);
+      touch-action: none; 
     }
-    
-    /* 3) 用 pseudo-element 強制把「瀏海區 / Home Bar 區」塗滿（關鍵） */
-    body::before,
-    body::after{
-      content:"";
+
+    body { -webkit-touch-callout: default; }
+
+    /* 關鍵 5：獨立背景層，強制撐滿整個物理螢幕 (包含瀏海區) */
+    #fixed-bg {
       position: fixed;
-      left: 0;
-      right: 0;
-      pointer-events: none;
-      z-index: 2147483647; /* 最上層，確保永遠蓋住白邊 */
-      background: var(--bg);
-    }
-    
-    body::before{
-      top: 0;
-      height: var(--safe-top);
-    }
-    
-    body::after{
-      bottom: 0;
-      height: var(--safe-bottom);
-    }
-    
-    /* 4) 你的固定背景層：改用 inset:0 + dvh，避免 iOS 計算錯 */
-    #fixed-bg{
-      position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      min-height: 100vh;
-      min-height: 100svh;
-      min-height: 100dvh;
-      min-height: -webkit-fill-available;
-      background: var(--bg);
+      top: 0; left: 0; right: 0; bottom: 0;
+      width: 100vw; height: 100vh;
+      background: linear-gradient(160deg, #dbeafe 0%, #eff6ff 40%, #f0f9ff 100%);
       z-index: -1;
       pointer-events: none;
     }
-    
-    /* 5) App 容器吃 safe-area，內容不被遮；同時背景透明交給 body */
-    #app{
-      position: relative;
-      width: 100%;
+
+    #app {
       height: 100%;
-      min-height: 100vh;
-      min-height: 100svh;
-      min-height: 100dvh;
-      min-height: -webkit-fill-available;
-    
       display: flex;
       flex-direction: column;
+      position: relative;
+      /* 確保 App 容器本身也撐滿 */
+      width: 100%;
       overflow: hidden;
-    
-      padding-top: var(--safe-top);
-      padding-bottom: var(--safe-bottom);
-      background: transparent;
     }
-    
-    /* ===== 下面開始接你原本的 CSS（header/card/... 都維持不動） ===== */
-    *{ box-sizing: border-box; }
-
 
     /* 頂部標題區：利用 padding 避開瀏海 */
     .header-section {
@@ -1840,3 +1795,5 @@ createApp({
 </script>
 </body>
 </html>
+
+```
