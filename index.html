@@ -27,23 +27,48 @@
   <style>
     /* CSS Setup */
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
+    
+    /* ✅ 1) 讓 html/body 本身就有同樣的漸層背景（safe-area 不會露白） */
     html, body {
       height: 100%;
       width: 100%;
+      margin: 0;
       overflow: hidden; /* 禁止整頁捲動，只允許內部捲動 */
       font-family: 'Inter', 'Noto Sans TC', -apple-system, sans-serif;
-      background-color: #f0f9ff;
+      background: linear-gradient(160deg, #dbeafe 0%, #eff6ff 40%, #f0f9ff 100%);
       color: #1e3a8a;
       overscroll-behavior: none;
       user-select: none;
       -webkit-user-select: none;
-      touch-action: none; 
+      touch-action: none;
     }
-
+    
     body { -webkit-touch-callout: default; }
-
-    /* 關鍵 5：獨立背景層，強制撐滿整個物理螢幕 (包含瀏海區) */
+    
+    /* ✅ 2) 保險層：強制把「上方瀏海區」與「下方 Home bar 區」塗滿同樣背景
+       這可以解掉 iOS 最常見的上下白邊（彈性捲動/重繪時也不會露白） */
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      left: 0;
+      right: 0;
+      pointer-events: none;
+      z-index: 9999;
+      background: linear-gradient(160deg, #dbeafe 0%, #eff6ff 40%, #f0f9ff 100%);
+    }
+    
+    body::before {
+      top: 0;
+      height: env(safe-area-inset-top);
+    }
+    
+    body::after {
+      bottom: 0;
+      height: env(safe-area-inset-bottom);
+    }
+    
+    /* ✅ 3) 你的固定背景層仍保留（可有可無，但留著不會壞） */
     #fixed-bg {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -52,16 +77,19 @@
       z-index: -1;
       pointer-events: none;
     }
-
+    
+    /* ✅ 4) App 主容器：吃掉 safe-area，避免內容被遮或露底 */
     #app {
       height: 100%;
       display: flex;
       flex-direction: column;
       position: relative;
-      /* 確保 App 容器本身也撐滿 */
       width: 100%;
       overflow: hidden;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
     }
+
 
     /* 頂部標題區：利用 padding 避開瀏海 */
     .header-section {
