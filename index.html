@@ -26,69 +26,102 @@
 
   <style>
     /* CSS Setup */
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    
-    /* ✅ 1) 讓 html/body 本身就有同樣的漸層背景（safe-area 不會露白） */
-    html, body {
-      height: 100%;
-      width: 100%;
-      margin: 0;
-      overflow: hidden; /* 禁止整頁捲動，只允許內部捲動 */
-      font-family: 'Inter', 'Noto Sans TC', -apple-system, sans-serif;
-      background: linear-gradient(160deg, #dbeafe 0%, #eff6ff 40%, #f0f9ff 100%);
-      color: #1e3a8a;
-      overscroll-behavior: none;
-      user-select: none;
-      -webkit-user-select: none;
-      touch-action: none;
+    /* ===== iOS SAFE-AREA / VIEWPORT FIX (必須放最前面) ===== */
+    :root{
+      --bg: linear-gradient(160deg, #dbeafe 0%, #eff6ff 40%, #f0f9ff 100%);
+      --safe-top: env(safe-area-inset-top);
+      --safe-bottom: env(safe-area-inset-bottom);
     }
     
-    body { -webkit-touch-callout: default; }
+    /* 1) 讓 html/body 永遠有背景，避免 safe-area 露白 */
+    html, body{
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      background: var(--bg);
+      overscroll-behavior: none;
+    }
     
-    /* ✅ 2) 保險層：強制把「上方瀏海區」與「下方 Home bar 區」塗滿同樣背景
-       這可以解掉 iOS 最常見的上下白邊（彈性捲動/重繪時也不會露白） */
+    /* 2) iOS 動態高度：用 dvh/svh + -webkit-fill-available 保險 */
+    body{
+      min-height: 100vh;
+      min-height: 100svh;
+      min-height: 100dvh;
+      min-height: -webkit-fill-available;
+    
+      font-family: 'Inter', 'Noto Sans TC', -apple-system, sans-serif;
+      color: #1e3a8a;
+    
+      /* 你原本有禁止整頁捲動：保留 */
+      overflow: hidden;
+    
+      /* 你原本有這些：保留 */
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    
+      /* 讓 Safari 的彈性捲動不要露出白底 */
+      background: var(--bg);
+    }
+    
+    /* 3) 用 pseudo-element 強制把「瀏海區 / Home Bar 區」塗滿（關鍵） */
     body::before,
-    body::after {
-      content: "";
+    body::after{
+      content:"";
       position: fixed;
       left: 0;
       right: 0;
       pointer-events: none;
-      z-index: 9999;
-      background: linear-gradient(160deg, #dbeafe 0%, #eff6ff 40%, #f0f9ff 100%);
+      z-index: 2147483647; /* 最上層，確保永遠蓋住白邊 */
+      background: var(--bg);
     }
     
-    body::before {
+    body::before{
       top: 0;
-      height: env(safe-area-inset-top);
+      height: var(--safe-top);
     }
     
-    body::after {
+    body::after{
       bottom: 0;
-      height: env(safe-area-inset-bottom);
+      height: var(--safe-bottom);
     }
     
-    /* ✅ 3) 你的固定背景層仍保留（可有可無，但留著不會壞） */
-    #fixed-bg {
+    /* 4) 你的固定背景層：改用 inset:0 + dvh，避免 iOS 計算錯 */
+    #fixed-bg{
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      width: 100vw; height: 100vh;
-      background: linear-gradient(160deg, #dbeafe 0%, #eff6ff 40%, #f0f9ff 100%);
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      min-height: 100vh;
+      min-height: 100svh;
+      min-height: 100dvh;
+      min-height: -webkit-fill-available;
+      background: var(--bg);
       z-index: -1;
       pointer-events: none;
     }
     
-    /* ✅ 4) App 主容器：吃掉 safe-area，避免內容被遮或露底 */
-    #app {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
+    /* 5) App 容器吃 safe-area，內容不被遮；同時背景透明交給 body */
+    #app{
       position: relative;
       width: 100%;
+      height: 100%;
+      min-height: 100vh;
+      min-height: 100svh;
+      min-height: 100dvh;
+      min-height: -webkit-fill-available;
+    
+      display: flex;
+      flex-direction: column;
       overflow: hidden;
-      padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
+    
+      padding-top: var(--safe-top);
+      padding-bottom: var(--safe-bottom);
+      background: transparent;
     }
+    
+    /* ===== 下面開始接你原本的 CSS（header/card/... 都維持不動） ===== */
+    *{ box-sizing: border-box; }
 
 
     /* 頂部標題區：利用 padding 避開瀏海 */
